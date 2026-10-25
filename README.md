@@ -54,10 +54,6 @@ It is a drop-in swap for anyone running the Frappe desk: no DocType changes are 
 
 ## Installation
 
-On Frappe Cloud, install Rich Text Editor for Desk from the [Frappe marketplace](https://cloud.frappe.io/marketplace/apps/ui_text_editor).
-
-On a bench of your own:
-
 ```bash
 bench get-app https://github.com/Avunu/ui_text_editor --branch version-16
 bench --site <site> install-app ui_text_editor
