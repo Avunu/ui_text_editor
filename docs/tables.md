@@ -26,7 +26,7 @@ While the cursor is in a table, a bar of table controls appears with it.
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | **Insert column left**, **Insert column right** | Add a column beside the current cell.                                                            |
 | **Delete column**                               | Removes the column of the current cell.                                                          |
-| **Insert row above**, **Insert row below**      | Add a row beside the current cell.                                                               |
+| **Insert row above**, **Insert row below**      | Add a row above or below the current cell.                                                       |
 | **Delete row**                                  | Removes the row of the current cell.                                                             |
 | **Toggle header row**                           | Makes the first row a header row, or an ordinary row again.                                      |
 | **Merge cells** or **Split cell**               | Merges the selected cells into one, or splits a merged cell. The name changes with what applies. |

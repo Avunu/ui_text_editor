@@ -67,8 +67,8 @@ The build matters: a new version of the editor reaches the desk only once its bu
 bench --site <SITE_NAME> uninstall-app ui_text_editor
 ```
 
-Frappe removes the app from the site's installed apps and deletes its module, **Frappe UI Editor Integration**. From then on the desk no longer includes the editor bundle, and Text Editor fields use Quill again after a reload.
+Frappe asks you to confirm and takes a backup of the site's database first (unless you pass `--no-backup`). It then removes the app from the site's installed apps and deletes its module, **Frappe UI Editor Integration**. From then on the desk no longer includes the editor bundle, and Text Editor fields use Quill again after a reload.
 
 The values written while the app was installed stay as they are. They are wrapped the way Quill wraps its values, so they still render in print formats, emails and read-only views. The app does not convert them back to Quill's own markup, though: check lists, for example, stay in the frappe-ui editor's form (`ul data-type="taskList"`), and how Quill shows such markup when you edit the value again is up to Quill. See [Existing content and saved values](saved-values.md).
 
-The built bundle stays in `apps/ui_text_editor` until you remove the app from the bench with `bench remove-app ui_text_editor`.
+The images uploaded through the editor stay as public File documents, and the fields that show them keep working. The built bundle stays in `apps/ui_text_editor` until you remove the app from the bench with `bench remove-app ui_text_editor`.

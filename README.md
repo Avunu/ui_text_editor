@@ -80,7 +80,7 @@ There is nothing to configure. Once the app is installed and its assets are buil
 
 ## Limitations
 
-- Text direction (RTL), font sizes and nested indentation that Quill stored as classes are not carried over when a value is opened.
+- Text direction (RTL), indentation, font sizes and fonts that Quill stored are not carried over when a value is opened, so nested list items come back one level deep.
 - Text, background, highlight and table cell colours are stored as references to the editor's palette (`var(--prose-color-…)`), which is defined only inside the editor, so they do not show in read-only views, print formats or e-mails.
 - **Not included:** `@` mentions, emoji, slash commands, video, file attachments and iframe embeds. The editor's pop-ups for those are not styled for the desk, and the server strips iframes anyway.
 - The **Comment** box in the form timeline is a separate control and still uses Quill, and so do web forms: the bundle loads in the desk only.

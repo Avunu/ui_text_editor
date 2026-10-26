@@ -24,7 +24,7 @@ The toolbar sits above the text. Its buttons show icons; hover over one to see i
 | **Highlight**                                     | Highlights the selection in yellow, or removes the highlight.                                             |
 | **Bullet List**, **Ordered List**, **Task list**  | Start or end a bulleted, numbered or check list. Task list items have a box you tick.                     |
 | **Outdent**, **Indent**                           | Move the current list item one level out or in. They are greyed out where the item cannot move.           |
-| **Align Left**, **Align Center**, **Align Right** | Align the current paragraph. Inside a table they align the cell.                                          |
+| **Align Left**, **Align Center**, **Align Right** | Align the current paragraph. With several table cells selected, they align those cells.                   |
 | **Blockquote**                                    | Turns the paragraph into a quote.                                                                         |
 | **Code block**                                    | Turns the paragraph into a block of preformatted code.                                                    |
 | **Horizontal Rule**                               | Inserts a dividing line.                                                                                  |

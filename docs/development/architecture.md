@@ -50,7 +50,7 @@ The control keeps the contract the rest of the desk relies on:
 
 `fromFrappe` parses the stored value with `DOMParser` (an inert document: nothing runs or loads), unwraps a single `.ql-editor` root, removes Quill's `ql-ui` and `ql-cursor` elements, turns `ql-align-*` classes into `text-align` styles, and turns Quill's `ol` lists with `data-list="bullet"` into `ul`, and with `checked` or `unchecked` into the editor's task list (`ul data-type="taskList"` with `li data-type="taskItem" data-checked`). Lists with `data-list="ordered"` stay `ol`.
 
-`toFrappe` returns an empty string for an empty editor, and otherwise wraps the HTML in `<div class="ql-editor read-mode">`. The desk, print formats and emails style rich text through that class, and Frappe's mandatory check strips tags, so an empty paragraph would otherwise count as a value.
+`toFrappe` returns an empty string for an empty editor, and otherwise wraps the HTML in `<div class="ql-editor read-mode">`. The desk, print formats and emails style rich text through that class. The desk's mandatory check before saving (`frappe.model.has_value`) does not strip tags, so a wrapped empty paragraph would count as a value there; the empty string makes it, and "is set" filters, see an empty field.
 
 ## The editor
 

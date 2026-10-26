@@ -18,7 +18,7 @@ Do one of these with the cursor where the image should go:
 
 The image appears at once with a progress indicator while it uploads. Once it is uploaded, click it to select it, and drag the handle at its corner to resize it.
 
-Add images one at a time. The app turns off frappe-ui's image gallery, which is what the editor opens when you pick or drop several images at once.
+Pasting several images adds them one after another. Picking or dropping several images at once opens frappe-ui's **Upload Images** dialog instead: click **Insert as separate images** there. The app turns off frappe-ui's image gallery, so the dialog's main button, which would insert the images as one gallery, does not add them.
 
 ## Where the file goes
 
@@ -35,7 +35,7 @@ The site's upload rules apply: the maximum file size, the allowed file extension
 
 ## When an upload fails
 
-If the site refuses the file, the image shows the server's message, for example "File size exceeded the maximum allowed size of 25 MB", with three buttons:
+If the site refuses the file, the image shows the server's message, for example "File size exceeded the maximum allowed size of 25.0 MB", with three buttons:
 
 - **Try again** uploads the same file again.
 - **Choose another** opens the file picker to replace it.

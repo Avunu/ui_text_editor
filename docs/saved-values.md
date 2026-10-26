@@ -22,12 +22,12 @@ When a field opens, the editor takes the stored value, removes Quill's wrapper a
 
 Headings, bold, italic, links, quotes, code blocks, tables and images are standard HTML and open as they are. Text and background colours that Quill wrote as inline styles are matched to the nearest colour of the editor's palette.
 
-Some of what Quill could store has no counterpart in the editor and is not carried over when you edit and save the value again: text direction (right to left), font sizes, and indentation that Quill stored as classes. Until someone edits the field, the stored value is not touched.
+Some of what Quill could store has no counterpart in the editor and is not carried over when you edit and save the value again: text direction (right to left) and indentation, which Quill stored as classes, and font sizes and fonts, which it stored as inline styles. Indented list items come back one level deep. Until someone edits the field, the stored value is not touched.
 
 ## What the editor saves
 
 - The value is wrapped in `<div class="ql-editor read-mode">`, as Quill wraps it. The desk, print formats and emails style rich text through that class.
-- An empty editor saves an empty string, not an empty paragraph, so a mandatory Text Editor field left empty is reported as missing and "is set" filters work as they did.
+- An empty editor saves an empty string, so a mandatory Text Editor field left empty is reported as missing before the form is saved, and an "is set" filter does not match it. Quill saved an emptied editor as an empty paragraph inside its wrapper, which the desk counted as a value.
 - Scripts and style blocks are removed before the value is stored, as with Quill.
 - Lists, check lists, tables and the other content are saved in the frappe-ui editor's own HTML. A check list, for example, is stored as `ul data-type="taskList"`.
 - Text colour, background colour, highlight and table cell colours are saved as references to the editor's palette, such as `color: var(--prose-color-red)`, not as colour values.
