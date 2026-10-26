@@ -35,6 +35,9 @@ The toolbar sits above the text. Its buttons show icons; hover over one to see i
 
 A highlighted button means the format is on where the cursor is.
 
+> [!NOTE]
+> Colours set with **Font Color** and **Highlight** show in the editor only. Read-only views, print formats and emails show that text without its colour. See [What the editor saves](saved-values.md#what-the-editor-saves).
+
 The toolbar offers four heading levels. A value that Quill saved with a level 5 or 6 heading keeps it, because the editor reads all six levels.
 
 ## The selection menu
