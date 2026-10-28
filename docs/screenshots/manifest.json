@@ -7,7 +7,7 @@
 		"readme": "hero",
 		"width": 2880,
 		"height": 1800,
-		"sha256": "f4770579b68dbfb8b975c6d136b56c061baa891433db02ce128aa507ba88515e"
+		"sha256": "634273dee39ecf8eba2e155314e9d826e58d7c6141f6f09f7a1dc548844a649b"
 	},
 	{
 		"name": "note-editor",
@@ -17,7 +17,7 @@
 		"readme": "hero",
 		"width": 2880,
 		"height": 1800,
-		"sha256": "34a2425bf5bb8466f1c727aed7c0b3fba51451c3240104b9c35614a7d3321706"
+		"sha256": "021dd0e089345ce5695ce6936e2a5684762978bd87c0d6c76b486d3e0c62c40c"
 	},
 	{
 		"name": "table-menu",
@@ -27,7 +27,7 @@
 		"readme": "feature",
 		"width": 2880,
 		"height": 1800,
-		"sha256": "0bc79964d9565a14a680e536fd0e35c34cf11aa6e8ea41ecdf6f3ee9b4f13a8c"
+		"sha256": "acb2e043b4aff2a4a7998d0d8bbc1c12fec86dffa83d434ac45c54984bfea725"
 	},
 	{
 		"name": "table-menu",
@@ -37,6 +37,6 @@
 		"readme": "feature",
 		"width": 2880,
 		"height": 1800,
-		"sha256": "ceacc09889e08f80d0569b6ee270a2a20e8130538a66437a742cba2c48756152"
+		"sha256": "e92b9f118eac20c403f2b1490d1557bf9e4d611ae25bf9aef59ce0c9c94c21aa"
 	}
 ]
