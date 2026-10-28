@@ -21,6 +21,6 @@ jobs:
   docs:
     permissions:
       contents: read # checkout
-    uses: Avunu/site-docs/.github/workflows/check-docs.yml@06e8bf3e50bfe5b26add9b041ec71d4a216fcc62 # 2026-10-25
+    uses: Avunu/site-docs/.github/workflows/check-docs.yml@9df9c80b0102bb8d55674b36a2c76231b2770805 # 2026-10-25
     with:
       path: ui-text-editor
