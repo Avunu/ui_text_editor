@@ -15,6 +15,7 @@ Rich text editor from frappe-ui for every Text Editor field in the Frappe desk
 [![Latest release](https://img.shields.io/github/v/release/Avunu/ui_text_editor)](https://github.com/Avunu/ui_text_editor/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](license.txt)
 [![Frappe v16](https://img.shields.io/badge/Frappe-v16-blue)](https://github.com/frappe/frappe/tree/version-16)
+[![Documentation](https://img.shields.io/badge/docs-docs.avunu.net-blue)](https://docs.avunu.net/ui-text-editor/)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/note-editor-dark.webp">
@@ -91,6 +92,7 @@ The full list, and fixes for common problems, are in [docs/troubleshooting.md](d
 
 ## Support
 
+- Documentation: [docs.avunu.net/ui-text-editor/](https://docs.avunu.net/ui-text-editor/)
 - Bug reports and questions: [GitHub issues](https://github.com/Avunu/ui_text_editor/issues)
 - E-mail: <mail@avu.nu>
 
