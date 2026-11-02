@@ -34,7 +34,7 @@
 		"@tiptap/extension-code-block": "^3.32.0",
 		"@tiptap/extension-list": "^3.32.0",
 		"@tiptap/extension-underline": "^3.32.0",
-		"@types/node": "^26.6.5",
+		"@types/node": "^26.6.6",
 		"@vitejs/plugin-vue": "^6.0.10",
 		"frappe-types": "^16.5.0",
 		"oxfmt": "^0.75.0",
