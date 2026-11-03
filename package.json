@@ -25,15 +25,15 @@
 	},
 	"dependencies": {
 		"@iconify-json/lucide": "^1",
-		"frappe-ui": "^1.0",
+		"frappe-ui": "^1.1",
 		"vue": "^3",
 		"vue-router": "^5.4.0"
 	},
 	"devDependencies": {
-		"@tiptap/core": "^3.32.0",
-		"@tiptap/extension-code-block": "^3.32.0",
-		"@tiptap/extension-list": "^3.32.0",
-		"@tiptap/extension-underline": "^3.32.0",
+		"@tiptap/core": "^3.32.2",
+		"@tiptap/extension-code-block": "^3.32.2",
+		"@tiptap/extension-list": "^3.32.2",
+		"@tiptap/extension-underline": "^3.32.2",
 		"@types/node": "^26.6.6",
 		"@vitejs/plugin-vue": "^6.0.10",
 		"frappe-types": "^16.5.0",
@@ -45,7 +45,7 @@
 		"typescript": "^7.0.2",
 		"typescript5": "npm:typescript@^5.9.3",
 		"vite": "^8.3.5",
-		"vue-tsc": "^3.3.13"
+		"vue-tsc": "^3.3.14"
 	},
 	"resolutions": {
 		"prosemirror-keymap": "^1.2.3",
