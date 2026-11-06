@@ -47,9 +47,14 @@ Close the dialog to give up on the image. Its placeholder goes away.
 
 The editor says "`<FILE>` is private, so it will not load in emails or on web pages.". Either you chose a private file from the library, or **Only allow System Managers to upload public files** is ticked in System Settings and you are not a System Manager. The image shows in the desk for people who may read the file. For an email or a web page, use a public file, or have a System Manager add the image.
 
-### The editor says a file is not an image
+### The editor says it cannot show a file
 
-You chose a file of another kind from the library or by link. The dialog does not filter those. Frappe has attached the file to the document all the same, so remove it from the form's **Attachments** if you do not want it there.
+The message reads "... cannot be shown as an image, so it was not added". The editor loads a file you choose from the library or by link before it adds it, and the browser could not show this one. Nothing has been attached to the document, and the dialog stays open so you can choose something else. The usual reasons:
+
+- The file is not an image. The dialog does not filter the library or the link tab.
+- It is an image format your browser does not show, such as HEIC or TIFF in Chrome. An image the browser cannot show would be broken in the field too. Convert it, for example to JPEG or PNG.
+- The link is wrong, or its server is not reachable or took longer than 15 seconds to answer.
+- The server only lets some people see the image, for example behind a login.
 
 See [Image uploads](configuration.md#image-uploads) for the settings behind these.
 

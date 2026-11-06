@@ -18,11 +18,15 @@ Do one of these with the cursor where the image should go:
 
 Pasted and dropped images show as a placeholder behind the dialog until they are uploaded. Once an image is in the field, click it to select it, and drag the handle at its corner to resize it.
 
-Close the dialog without uploading and nothing changes: the placeholder goes away, and the document is not marked as changed. One undo takes out an image you added.
+A pasted or dropped image replaces what you had selected only once it is uploaded. Until then the selection stays where it is, with the placeholder beside it.
+
+Close the dialog without uploading and nothing changes: the placeholder goes away, anything you had selected is still there, and the document is not marked as changed. Undo then carries on with whatever you did before. One undo takes out an image you added, and brings back what it replaced.
 
 Several images pasted at once open the dialog once for each, one after the other. A pasted image that arrives while the dialog is open joins the list in it.
 
-The library and the link are not limited to images, as the dialog does not filter them. If you choose some other kind of file, the editor says so and adds nothing, but Frappe has already attached the file to the document at that point. Remove it from the form's **Attachments** if you did not mean to.
+The dialog does not limit the library and the link to images, so the editor checks your choice first, by loading it. If the browser cannot show it as an image, the editor says so and the dialog stays open for another choice. Nothing is attached to the document in that case. See [The editor says it cannot show a file](troubleshooting.md#the-editor-says-it-cannot-show-a-file).
+
+If the field changes while a pasted image waits, for example because someone else saved the document and the form reloaded, the placeholder moves to the end of the paragraph nearest to where it was. Upload as usual, and the document has both your image and their change.
 
 ## Where the file goes
 
@@ -45,3 +49,7 @@ The site's upload rules apply: the maximum file size, the allowed file extension
 ## When an upload fails
 
 If the site refuses a file, the dialog stays open and shows the server's message under the file, for example "File type of PNG is not allowed". Close the dialog to give up on it, and its placeholder goes away. [Limitations and troubleshooting](troubleshooting.md#an-image-does-not-upload) lists the common causes.
+
+If you close the dialog while the upload is still running, the placeholder stays until the upload ends. A failure then shows as a red message with the server's reason, and the placeholder goes away.
+
+A running upload cannot be called back. Click the **X** on its placeholder and the image stays out of the field, but the server still finishes the upload, so the file ends up attached to the document. Remove it from the form's **Attachments** if you do not want it there. The same goes for an upload that ends after you opened another document: the file is attached to the first document, and it is not added to either field.
