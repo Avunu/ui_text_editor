@@ -44,8 +44,7 @@ import {
 	type TiptapEditor,
 } from "frappe-ui/editor";
 import type { EditorEvents } from "@tiptap/core";
-import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { FrappeImages, pendingUploads } from "./images";
+import { FrappeImages, createEditFilter } from "./images";
 import { BUBBLE_MENU, TABLE_MENU, TOOLBAR } from "./toolbar";
 import { createImageDialog, type UploadTarget } from "./upload";
 
@@ -124,7 +123,7 @@ const extensions = markRaw([
 		typography: false,
 	}),
 	Heading.configure({ levels: [1, 2, 3, 4, 5, 6] }),
-	FrappeImages.configure({ dialog: images }),
+	FrappeImages.configure({ dialog: images, target: () => props.uploadTarget() }),
 ]);
 
 /**
@@ -136,22 +135,14 @@ const extensions = markRaw([
  *
  * An image's placeholder is not one yet either: it can sit behind the file
  * dialog for as long as the user likes, and closing the dialog removes it. The
- * model hears about the image once it has a URL, and nothing if the document
- * ended up as it was, so a cancelled paste leaves the form clean.
+ * model hears about the image once it has a URL, so a cancelled paste leaves the
+ * form clean (`createEditFilter`).
  */
 let instance: TiptapEditor | null = null;
-let beforeUpload: ProseMirrorNode | null = null;
+const isEdit = createEditFilter();
 
 function onUpdate({ editor: tiptap, transaction }: EditorEvents["update"]) {
-	if (!transaction.docChanged) return;
-	const doc = tiptap.state.doc;
-	if (pendingUploads(doc) > 0) {
-		beforeUpload ??= transaction.before;
-		return;
-	}
-	const unchanged = beforeUpload?.eq(doc);
-	beforeUpload = null;
-	if (!unchanged) emit("change", tiptap.getHTML(), tiptap.isEmpty);
+	if (isEdit(transaction, tiptap.state.doc)) emit("change", tiptap.getHTML(), tiptap.isEmpty);
 }
 
 onMounted(() => {
