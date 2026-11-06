@@ -24,16 +24,33 @@ interface FileDoc extends UploadedMedia {
 	is_private?: 0 | 1;
 }
 
+/** A row in the dialog's list of the device's files. */
+interface DialogFile {
+	/** The file as it was added. `file_obj` is what gets sent, which the crop tool replaces. */
+	cropper_file: File;
+	file_obj: File;
+	name: string;
+	doc: FileDoc | null;
+	failed: boolean;
+	error_message: string | null;
+}
+
 /** `frappe.ui.FileUploader`, which frappe-types does not declare; the parts used here. */
 interface FileUploader {
 	dialog: {
 		$wrapper: { on(event: string, handler: () => void): unknown };
 		keep_grid_form_open: boolean;
+		get_primary_btn(): { prop(name: string, value: boolean): unknown };
 	};
-	/** The Vue app inside the dialog; `files` is its list, with the device's files. */
+	/** The Vue app inside the dialog. */
 	uploader: {
-		files: { file_obj: File; doc: FileDoc | null }[];
+		files: DialogFile[];
 		add_files(files: File[]): void;
+		/** The library and link tabs, while they are the ones showing. */
+		$refs: {
+			file_browser?: { selected_node: { file_url?: string } };
+			web_link?: { url: string; invalid_input(error: string): void };
+		};
 	};
 	upload_files(): Promise<unknown>;
 }
@@ -75,10 +92,18 @@ export function uploadTarget(
 }
 
 /**
+ * Whether an upload asked for under `asked` still belongs in the document now
+ * open. An unsaved document has no name to go by, and it keeps the upload when
+ * it is saved meanwhile.
+ */
+export function sameDocument(asked: UploadTarget, now: UploadTarget): boolean {
+	return !asked.docname || (asked.doctype === now.doctype && asked.docname === now.docname);
+}
+
+/**
  * The message of a deliberate cancel. frappe-ui only treats a rejection as quiet
  * when its own abort signal fired, which nothing outside the editor can do, and
- * otherwise shows the message on the image; `images.ts` removes an image that
- * carries this one.
+ * otherwise writes the message on the image; `images.ts` takes that out instead.
  */
 export const UPLOAD_CANCELLED = "ui_text_editor:upload-cancelled";
 
@@ -87,16 +112,27 @@ const cancelled = () => new DOMException(UPLOAD_CANCELLED, "AbortError");
 /** The site's own limits still apply, on the server. */
 const RESTRICTIONS = { allowed_file_types: ["image/*"] };
 
-const IMAGE_EXTENSION = /\.(avif|bmp|gif|heic|ico|jpe?g|png|svg|tiff?|webp)$/i;
+/** How long a library or link choice gets to load before it counts as not loading. */
+export const IMAGE_CHECK_TIMEOUT = 15_000;
 
 /**
  * The library and the link tab are not restricted by the dialog, so a choice
- * there can be any file. A URL with no extension gets the benefit of the doubt:
- * image hosts often serve those.
+ * there can be any file, and the server attaches it to the document as soon as
+ * it hears of it. So ask the browser first: its answer covers any extension or
+ * none, and it is the one that counts for showing the image in the editor.
  */
-export function looksLikeImage(fileUrl: string): boolean {
-	const { pathname } = new URL(fileUrl, "http://localhost");
-	return !/\.[^./]+$/.test(pathname) || IMAGE_EXTENSION.test(pathname);
+function loadsAsImage(url: string): Promise<boolean> {
+	return new Promise((resolve) => {
+		const image = new Image();
+		const timer = setTimeout(() => resolve(false), IMAGE_CHECK_TIMEOUT);
+		const answer = (loaded: boolean) => {
+			clearTimeout(timer);
+			resolve(loaded);
+		};
+		image.addEventListener("load", () => answer(true), { once: true });
+		image.addEventListener("error", () => answer(false), { once: true });
+		image.src = url;
+	});
 }
 
 export interface ImageDialogOptions {
@@ -136,17 +172,33 @@ function warnIfPrivate(doc: FileDoc): void {
 	if (!doc.is_private) return;
 	frappe.show_alert({
 		message: __("{0} is private, so it will not load in emails or on web pages.", [
-			doc.file_name ?? doc.file_url,
+			frappe.utils.escape_html(doc.file_name ?? doc.file_url),
 		]),
 		indicator: "orange",
 	});
 }
 
+/** Frappe writes a failure into its list, which nobody sees once the dialog is gone. */
+function reportFailure(files: DialogFile[], failure: DialogFile): void {
+	const lost = files.filter((file) => !file.doc).map((file) => frappe.utils.escape_html(file.name));
+	frappe.show_alert({
+		message: __("Could not upload {0}: {1}", [
+			lost.join(", "),
+			frappe.utils.escape_html(failure.error_message ?? __("The upload failed.")),
+		]),
+		indicator: "red",
+	});
+}
+
 function openDialog(owner: ImageDialogOptions): Session {
 	const waiting = new Map<File, Waiter>();
-	// A retry after a failure sends the whole list again, finished files included.
-	const delivered = new Set<File>();
+	// Files the editor is done with: a retry after a failure sends the whole list
+	// again, finished files included, and a cancelled file's request cannot be
+	// called back, only ignored when it answers.
+	const finished = new Set<File>();
 	let uploading: Promise<unknown> | undefined;
+	let checking = false;
+	let closed = false;
 
 	const onSuccess = (doc: FileDoc | null) => {
 		if (!doc?.file_url) {
@@ -154,23 +206,14 @@ function openDialog(owner: ImageDialogOptions): Session {
 			return;
 		}
 		// Files from the device are in the dialog's list; a library or link choice is not.
-		const file = dialog.uploader.files.find((entry) => entry.doc?.name === doc.name)?.file_obj;
-		if (file && delivered.has(file)) return;
-		if (file) delivered.add(file);
+		const file = dialog.uploader.files.find((entry) => entry.doc?.name === doc.name)?.cropper_file;
+		if (file && finished.has(file)) return;
+		if (file) finished.add(file);
 
+		warnIfPrivate(doc);
 		const waiter = file && waiting.get(file);
-		if (waiter) {
-			warnIfPrivate(doc);
-			waiter.doc = doc;
-		} else if (file || looksLikeImage(doc.file_url)) {
-			warnIfPrivate(doc);
-			owner.insert(doc);
-		} else {
-			frappe.show_alert({
-				message: __("{0} is not an image, so it was not inserted.", [doc.file_name ?? doc.file_url]),
-				indicator: "orange",
-			});
-		}
+		if (waiter) waiter.doc = doc;
+		else owner.insert(doc);
 	};
 
 	const dialog = new frappe.ui.FileUploader({
@@ -192,11 +235,33 @@ function openDialog(owner: ImageDialogOptions): Session {
 	// Closing would otherwise close a grid row form the field is in (dialog.js).
 	dialog.dialog.keep_grid_form_open = true;
 
+	const uploadFiles = dialog.upload_files.bind(dialog);
+
+	const uploadIfImage = async (url: string) => {
+		const { web_link: link } = dialog.uploader.$refs;
+		const button = dialog.dialog.get_primary_btn();
+		checking = true;
+		button.prop("disabled", true);
+		const loaded = await loadsAsImage(url);
+		checking = false;
+		button.prop("disabled", false);
+		if (closed) return undefined;
+		if (loaded) return uploadFiles();
+		const message = __("{0} cannot be shown as an image, so it was not added.", [
+			frappe.utils.escape_html(url),
+		]);
+		if (link) link.invalid_input(message);
+		else frappe.show_alert({ message, indicator: "orange" });
+		return undefined;
+	};
+
 	// A library choice closes the dialog first and uploads after, so a closed
 	// dialog does not mean nothing more is coming: remember the running upload.
-	const uploadFiles = dialog.upload_files.bind(dialog);
 	dialog.upload_files = () => {
-		uploading = uploadFiles();
+		if (checking && uploading) return uploading;
+		const { file_browser: library, web_link: link } = dialog.uploader.$refs;
+		const url = library?.selected_node.file_url ?? link?.url;
+		uploading = url ? uploadIfImage(url) : uploadFiles();
 		return uploading;
 	};
 
@@ -209,13 +274,14 @@ function openDialog(owner: ImageDialogOptions): Session {
 					"abort",
 					() => {
 						waiting.delete(file);
+						finished.add(file);
 						reject(cancelled());
 					},
 					{ once: true },
 				);
 				dialog.uploader.add_files([file]);
 				// Refused by the dialog's own checks, which say why in an alert.
-				if (!dialog.uploader.files.some((entry) => entry.file_obj === file)) {
+				if (!dialog.uploader.files.some((entry) => entry.cropper_file === file)) {
 					waiting.delete(file);
 					reject(cancelled());
 				}
@@ -223,10 +289,16 @@ function openDialog(owner: ImageDialogOptions): Session {
 	};
 
 	dialog.dialog.$wrapper.on("hidden.bs.modal", () => {
+		closed = true;
 		if (session === opened) session = null;
+		// What failed by now was on show when the dialog was closed.
+		const seen = new Set(dialog.uploader.files.filter((entry) => entry.failed));
 		// Only now: a multi-file paste uploads its next file when the previous one
 		// settles, and that one should get a dialog of its own, not join this one.
 		const settle = async () => {
+			const { files } = dialog.uploader;
+			const failure = files.find((entry) => entry.failed && !entry.doc && !seen.has(entry));
+			if (failure) reportFailure(files, failure);
 			for (const { doc, resolve, reject } of waiting.values()) {
 				if (doc) resolve(doc);
 				else reject(cancelled());

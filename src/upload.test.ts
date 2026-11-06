@@ -5,15 +5,23 @@ import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 import type { UploadedMedia } from "frappe-ui/editor";
 import {
+	IMAGE_CHECK_TIMEOUT,
 	UPLOAD_CANCELLED,
 	createImageDialog,
-	looksLikeImage,
+	sameDocument,
 	uploadTarget,
 	type ImageDialogOptions,
 } from "./upload.ts";
 
 type Doc = UploadedMedia & { name: string; file_name?: string; is_private?: 0 | 1 };
-type Entry = { file_obj: File; doc: Doc | null };
+type Entry = {
+	cropper_file: File;
+	file_obj: File;
+	name: string;
+	doc: Doc | null;
+	failed: boolean;
+	error_message: string | null;
+};
 
 /** Stands in for `frappe.ui.FileUploader`, with what `FileUploader.vue` does to its list. */
 class FakeUploader {
@@ -24,6 +32,11 @@ class FakeUploader {
 	entries: Entry[] = [];
 	dialog = {
 		keep_grid_form_open: false,
+		get_primary_btn: () => ({
+			prop: (_name: string, value: boolean) => {
+				this.buttonDisabled = value;
+			},
+		}),
 		$wrapper: {
 			on: (event: string, handler: () => void) => {
 				assert.equal(event, "hidden.bs.modal");
@@ -35,10 +48,23 @@ class FakeUploader {
 		files: this.entries,
 		add_files: (files: File[]) => {
 			for (const file of files) {
-				if (!FakeUploader.refuse.has(file)) this.entries.push({ file_obj: file, doc: null });
+				if (FakeUploader.refuse.has(file)) continue;
+				this.entries.push({
+					cropper_file: file,
+					file_obj: file,
+					name: file.name,
+					doc: null,
+					failed: false,
+					error_message: null,
+				});
 			}
 		},
+		$refs: {} as {
+			file_browser?: { selected_node: { file_url?: string } };
+			web_link?: { url: string; invalid_input(error: string): void };
+		},
 	};
+	buttonDisabled = false;
 	hidden: () => void = () => undefined;
 	options: Record<string, unknown> & { on_success: (doc: Doc | null) => void };
 	upload_files: () => Promise<unknown> = () => Promise.resolve();
@@ -50,20 +76,44 @@ class FakeUploader {
 
 	/** A device file finished: the dialog sets `doc`, then reports it. */
 	uploaded(file: File, doc: Doc) {
-		const entry = this.entries.find((candidate) => candidate.file_obj === file);
+		const entry = this.entries.find((candidate) => candidate.cropper_file === file);
 		assert.ok(entry);
 		entry.doc = doc;
 		this.options.on_success(doc);
 	}
+
+	/** What the server's refusal does to a row: the dialog writes it there, and nothing else. */
+	failed(file: File, message: string | null) {
+		const entry = this.entries.find((candidate) => candidate.cropper_file === file);
+		assert.ok(entry);
+		entry.failed = true;
+		entry.error_message = message;
+	}
 }
 
 const alerts: { message: string; indicator: string }[] = [];
+/** The URLs the browser can show as an image, and those it never answers for. */
+const loads = new Set<string>();
+const hanging = new Set<string>();
+const loadRequests: string[] = [];
 
 Object.assign(globalThis, {
 	__: (text: string, args: string[] = []) => text.replace(/\{(\d)\}/g, (_, i: string) => args[Number(i)]),
 	frappe: {
 		ui: { FileUploader: FakeUploader },
 		show_alert: (alert: { message: string; indicator: string }) => alerts.push(alert),
+		utils: { escape_html: (text: string) => text.replaceAll("<", "&lt;") },
+	},
+	Image: class {
+		#listeners = new Map<string, () => void>();
+		addEventListener(event: string, listener: () => void) {
+			this.#listeners.set(event, listener);
+		}
+		set src(url: string) {
+			loadRequests.push(url);
+			if (hanging.has(url)) return;
+			setTimeout(() => this.#listeners.get(loads.has(url) ? "load" : "error")?.());
+		}
 	},
 });
 
@@ -111,6 +161,9 @@ beforeEach(async () => {
 	FakeUploader.refuse.clear();
 	alerts.length = 0;
 	inserted.length = 0;
+	loads.clear();
+	hanging.clear();
+	loadRequests.length = 0;
 });
 
 test("the toolbar opens an empty dialog restricted to public images", () => {
@@ -400,12 +453,158 @@ test("a retry does not insert a finished file twice", () => {
 	assert.equal(inserted.length, 1);
 });
 
-test("a library file that is not an image is reported, not inserted", () => {
-	editor().pick();
-	last().options.on_success(doc("report", { file_name: "report.pdf", file_url: "/files/report.pdf" }));
-	assert.equal(inserted.length, 0);
-	assert.equal(alerts[0]?.indicator, "orange");
-	assert.match(alerts[0]?.message ?? "", /report\.pdf is not an image/);
+class Counting extends FakeUploader {
+	static sent = 0;
+	constructor(options: FakeUploader["options"]) {
+		super(options);
+		this.upload_files = () => {
+			Counting.sent += 1;
+			return Promise.resolve();
+		};
+	}
+}
+
+test("a library choice the browser cannot show never reaches the server", async () => {
+	useUploader(Counting);
+	Counting.sent = 0;
+	try {
+		editor().pick();
+		const uploader = last();
+		uploader.uploader.$refs = { file_browser: { selected_node: { file_url: "/files/report.pdf" } } };
+		await uploader.upload_files();
+		assert.equal(Counting.sent, 0);
+		assert.equal(inserted.length, 0);
+		assert.equal(alerts[0]?.indicator, "orange");
+		assert.match(alerts[0]?.message ?? "", /report\.pdf cannot be shown as an image/);
+		assert.equal(uploader.buttonDisabled, false);
+	} finally {
+		useUploader(FakeUploader);
+	}
+});
+
+test("a library choice the browser can show goes through, whatever it is called", async () => {
+	useUploader(Counting);
+	Counting.sent = 0;
+	try {
+		for (const url of [
+			"/files/a.jfif",
+			"/files/a.apng",
+			"https://x.com/img.php?id=1",
+			"https://x.com/photo",
+		]) {
+			loads.add(url);
+			editor().pick();
+			const uploader = last();
+			uploader.uploader.$refs = { file_browser: { selected_node: { file_url: url } } };
+			const running = uploader.upload_files();
+			assert.equal(uploader.buttonDisabled, true);
+			// oxlint-disable-next-line no-await-in-loop -- one dialog at a time, as a person would
+			await running;
+			uploader.options.on_success(doc("chosen", { file_url: url }));
+			assert.equal(inserted.at(-1)?.file_url, url);
+			uploader.hidden();
+			// oxlint-disable-next-line no-await-in-loop -- one dialog at a time, as a person would
+			await tick();
+		}
+		assert.equal(Counting.sent, 4);
+		assert.equal(alerts.length, 0);
+	} finally {
+		useUploader(FakeUploader);
+	}
+});
+
+test("a link the browser cannot show is refused on the link tab itself", async () => {
+	useUploader(Counting);
+	Counting.sent = 0;
+	try {
+		editor().pick();
+		const uploader = last();
+		const errors: string[] = [];
+		const link = "https://[bad/a.png";
+		uploader.uploader.$refs = { web_link: { url: link, invalid_input: (error) => errors.push(error) } };
+		await uploader.upload_files();
+		assert.equal(Counting.sent, 0);
+		assert.equal(alerts.length, 0);
+		assert.match(errors[0] ?? "", /cannot be shown as an image/);
+	} finally {
+		useUploader(FakeUploader);
+	}
+});
+
+test("nothing chosen yet is left to the dialog's own message", async () => {
+	useUploader(Counting);
+	Counting.sent = 0;
+	try {
+		editor().pick();
+		const uploader = last();
+		uploader.uploader.$refs = { file_browser: { selected_node: {} } };
+		await uploader.upload_files();
+		uploader.uploader.$refs = { web_link: { url: "", invalid_input: () => undefined } };
+		await uploader.upload_files();
+		assert.equal(Counting.sent, 2);
+		assert.equal(loadRequests.length, 0);
+	} finally {
+		useUploader(FakeUploader);
+	}
+});
+
+test("a second click while a choice is being checked sends it once", async () => {
+	useUploader(Counting);
+	Counting.sent = 0;
+	try {
+		const url = "/files/a.png";
+		loads.add(url);
+		editor().pick();
+		const uploader = last();
+		uploader.uploader.$refs = { file_browser: { selected_node: { file_url: url } } };
+		await Promise.all([uploader.upload_files(), uploader.upload_files()]);
+		assert.equal(Counting.sent, 1);
+		assert.equal(loadRequests.length, 1);
+	} finally {
+		useUploader(FakeUploader);
+	}
+});
+
+test("closing the dialog while a choice is being checked sends nothing", async () => {
+	useUploader(Counting);
+	Counting.sent = 0;
+	try {
+		const url = "/files/a.png";
+		loads.add(url);
+		editor().pick();
+		const uploader = last();
+		uploader.uploader.$refs = { file_browser: { selected_node: { file_url: url } } };
+		const running = uploader.upload_files();
+		uploader.hidden();
+		await running;
+		await tick();
+		assert.equal(Counting.sent, 0);
+		assert.equal(inserted.length, 0);
+	} finally {
+		useUploader(FakeUploader);
+	}
+});
+
+test("a host that never answers counts as not showing, and the dialog recovers", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	useUploader(Counting);
+	Counting.sent = 0;
+	try {
+		const url = "https://slow.example.com/a.png";
+		hanging.add(url);
+		editor().pick();
+		const uploader = last();
+		uploader.uploader.$refs = { file_browser: { selected_node: { file_url: url } } };
+		const running = uploader.upload_files();
+		t.mock.timers.tick(IMAGE_CHECK_TIMEOUT);
+		await running;
+		assert.equal(Counting.sent, 0);
+		assert.match(alerts[0]?.message ?? "", /cannot be shown/);
+		assert.equal(uploader.buttonDisabled, false);
+	} finally {
+		t.mock.timers.reset();
+		useUploader(FakeUploader);
+	}
 });
 
 test("a private image is inserted with a warning", () => {
@@ -428,18 +627,135 @@ test("a response without a File document is an error", () => {
 	assert.equal(alerts[0]?.indicator, "red");
 });
 
-test("what counts as an image", () => {
-	for (const url of [
-		"/files/a.png",
-		"/files/a.JPG",
-		"/private/files/a.webp",
-		"https://example.com/a.svg?x=1.pdf",
-		"https://images.example.com/photo-123?w=800",
-		"https://example.com",
-	]) {
-		assert.equal(looksLikeImage(url), true, url);
+test("file names in a message are escaped", () => {
+	editor().pick();
+	last().options.on_success(doc("x", { is_private: 1, file_name: "<img src=x>.png" }));
+	assert.match(alerts[0]?.message ?? "", /&lt;img/);
+	assert.doesNotMatch(alerts[0]?.message ?? "", /<img/);
+});
+
+test("a pasted private image brings the warning too", async () => {
+	const file = png();
+	const upload = editor().upload(file);
+	last().uploaded(file, doc("secret", { is_private: 1 }));
+	last().hidden();
+	await upload;
+	assert.match(alerts[0]?.message ?? "", /is private/);
+});
+
+test("a cropped file still finds its placeholder", async () => {
+	const file = png();
+	const upload = editor().upload(file);
+	const [entry] = last().entries;
+	assert.ok(entry);
+	// What ImageCropper.vue does when the crop is applied.
+	entry.file_obj = new File(["cropped"], file.name, { type: file.type });
+	last().uploaded(file, doc("cropped"));
+	last().hidden();
+	assert.equal((await upload).file_url, "/files/cropped.png");
+	assert.equal(inserted.length, 0);
+});
+
+test("a device file picked in the dialog is inserted whatever its name says", () => {
+	editor().pick();
+	const picked = png("photo.jfif");
+	last().uploader.add_files([picked]);
+	last().uploaded(picked, doc("photo", { file_url: "/files/photo.jfif" }));
+	assert.equal(inserted[0]?.file_url, "/files/photo.jfif");
+	assert.equal(loadRequests.length, 0);
+});
+
+test("a cancelled file's late answer inserts nothing", async () => {
+	let finish = () => {};
+	class Slow extends FakeUploader {
+		constructor(options: FakeUploader["options"]) {
+			super(options);
+			this.upload_files = () => new Promise<void>((resolve) => (finish = resolve));
+		}
 	}
-	for (const url of ["/files/a.pdf", "https://example.com/a.docx?x=1.png", "https://example.com/page.html"]) {
-		assert.equal(looksLikeImage(url), false, url);
+	useUploader(Slow);
+	try {
+		const controller = new AbortController();
+		const file = png();
+		const upload = editor().upload(file, { signal: controller.signal });
+		const uploader = last();
+		const running = uploader.upload_files();
+		uploader.hidden();
+		controller.abort();
+		await assert.rejects(upload, assertCancelled);
+
+		// The request has gone out and cannot be called back.
+		uploader.uploaded(file, doc("late"));
+		finish();
+		await running;
+		await tick();
+		assert.equal(inserted.length, 0);
+		assert.equal(alerts.length, 0);
+	} finally {
+		useUploader(FakeUploader);
 	}
+});
+
+test("an upload that fails after the dialog closed says so, naming what was lost", async () => {
+	let fail: (reason: Error) => void = () => {};
+	class Slow extends FakeUploader {
+		constructor(options: FakeUploader["options"]) {
+			super(options);
+			this.upload_files = () => new Promise<void>((_resolve, reject) => (fail = reject));
+		}
+	}
+	useUploader(Slow);
+	try {
+		const first = png("first.png");
+		const second = png("<second>.png");
+		const images = editor();
+		const uploads = [images.upload(first), images.upload(second)];
+		const uploader = last();
+		const running = uploader.upload_files();
+		uploader.hidden();
+		uploader.failed(first, "File type of PNG is not allowed");
+		fail(new Error("417"));
+		await assert.rejects(running);
+		await assert.rejects(uploads[0], assertCancelled);
+		await assert.rejects(uploads[1], assertCancelled);
+		assert.equal(alerts.length, 1);
+		assert.equal(alerts[0]?.indicator, "red");
+		assert.match(alerts[0]?.message ?? "", /first\.png, &lt;second>\.png: File type of PNG is not allowed/);
+	} finally {
+		useUploader(FakeUploader);
+	}
+});
+
+test("a failure with no message from the server still says so", async () => {
+	const file = png();
+	const upload = editor().upload(file);
+	const uploader = last();
+	uploader.upload_files = () => Promise.reject(new Error("network"));
+	const running = uploader.upload_files();
+	uploader.hidden();
+	uploader.failed(file, null);
+	await assert.rejects(running);
+	await assert.rejects(upload, assertCancelled);
+	assert.match(alerts[0]?.message ?? "", /The upload failed/);
+});
+
+test("closing the dialog on a failure it was showing is a quiet cancel", async () => {
+	const file = png();
+	const upload = editor().upload(file);
+	last().failed(file, "File type of PNG is not allowed");
+	last().hidden();
+	await assert.rejects(upload, assertCancelled);
+	await tick();
+	assert.equal(alerts.length, 0);
+});
+
+test("the document an upload was asked for", () => {
+	const saved = { doctype: "Note", docname: "N-1", fieldname: "c" };
+	assert.equal(sameDocument(saved, saved), true);
+	assert.equal(sameDocument(saved, { ...saved, docname: "N-2" }), false);
+	assert.equal(sameDocument(saved, { ...saved, doctype: "ToDo" }), false);
+	assert.equal(sameDocument(saved, {}), false);
+	// An unsaved document, saved meanwhile.
+	assert.equal(sameDocument({}, saved), true);
+	assert.equal(sameDocument({}, {}), true);
 });
