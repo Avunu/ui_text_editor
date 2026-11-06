@@ -438,6 +438,60 @@ function commands(dialog: Partial<ImageDialog>, target: () => UploadTarget = () 
 
 const png = (name = "a.png") => new File(["x"], name, { type: "image/png" });
 
+test("a wider delete takes a placeholder with it, and undo brings back only the text", () => {
+	const ed = editor(doc(paragraph(text("one two three"))));
+	ed.insertPlaceholder("up", 5);
+	const pos = ed.find("up");
+	assert.equal(pos, 5);
+	ed.select(3, 9);
+	ed.dispatch(ed.state.tr.deleteSelection());
+	assert.equal(pendingUploads(ed.state.doc), 0);
+	assert.equal(ed.state.doc.textContent, "on three");
+
+	ed.undo();
+	assert.equal(ed.find("up"), null, "no placeholder without an upload behind it");
+	assert.equal(pendingUploads(ed.state.doc), 0);
+	assert.equal(ed.state.doc.textContent, "one two three");
+});
+
+test("after that undo the form still hears later edits", () => {
+	const ed = editor(doc(paragraph(text("one two three"))));
+	ed.insertPlaceholder("up", 5);
+	ed.select(3, 9);
+	ed.dispatch(ed.state.tr.deleteSelection());
+	ed.undo();
+	const before = ed.reported.length;
+	ed.dispatch(ed.state.tr.insertText("!", 1));
+	assert.equal(ed.reported.length, before + 1);
+	assert.equal(pendingUploads(ed.reported.at(-1) as ProseMirrorNode), 0);
+});
+
+test("a wider delete reaches the form once, without the placeholder", () => {
+	const ed = editor(doc(paragraph(text("one two three"))));
+	ed.insertPlaceholder("up", 5);
+	ed.select(3, 9);
+	ed.dispatch(ed.state.tr.deleteSelection());
+	assert.equal(ed.reported.length, 1);
+	assert.equal(pendingUploads(ed.reported[0]), 0);
+});
+
+test("a delete across two placeholders drops both, and a third outside it keeps waiting", () => {
+	const ed = editor(doc(paragraph(text("one two three four"))));
+	ed.insertPlaceholder("a", 3);
+	ed.insertPlaceholder("b", 6);
+	ed.insertPlaceholder("c", 18);
+	ed.select(2, 9);
+	ed.dispatch(ed.state.tr.deleteSelection());
+	assert.equal(ed.find("a"), null);
+	assert.equal(ed.find("b"), null);
+	assert.notEqual(ed.find("c"), null);
+	assert.equal(pendingUploads(ed.state.doc), 1);
+	ed.undo();
+	assert.equal(ed.find("a"), null);
+	assert.equal(ed.find("b"), null);
+	assert.notEqual(ed.find("c"), null);
+});
+
 test("the toolbar's command opens the dialog", () => {
 	let picked = 0;
 	assert.equal(commands({ pick: () => picked++ }).selectAndUploadImage()({}), true);

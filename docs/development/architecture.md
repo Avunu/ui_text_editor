@@ -88,6 +88,7 @@ It also sets `keep_grid_form_open` on the dialog's `frappe.ui.Dialog`, because c
 frappe-ui treats a rejected upload as a quiet cancel only when its own `AbortController` fired, and that is out of reach of `uploadFunction`. Any other rejection is shown on the image, with the error's message. So a cancel rejects with the message `UPLOAD_CANCELLED`, and a plugin in `images.ts` removes an image carrying it, in the same transaction, before it can render. Two more things follow from a placeholder that can wait behind a dialog:
 
 - `FrappeEditor.vue` does not report a change while an image is loading, and reports none at all if the document ends up as it was. A cancelled paste leaves the form clean.
+- An edit that deletes a placeholder along with other content is split: the placeholder comes out first, out of the undo history, and the history records the rest. Undo can't bring back a placeholder with no upload behind it, which would hold later edits back from the form.
 - Transactions that finish an upload stay out of the undo history, which then only records the placeholder being inserted. One undo removes the image, and undo cannot bring back a placeholder with no upload behind it.
 
 Uploads settle one per task. frappe-ui's content watcher can run in the middle of the next node view update, and with two updates in one task it restores the first one's HTML over the second, which loses that image.

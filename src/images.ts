@@ -27,10 +27,12 @@ import {
 	Plugin,
 	PluginKey,
 	Selection,
+	TextSelection,
 	type EditorState,
 	type SelectionBookmark,
 	type Transaction,
 } from "@tiptap/pm/state";
+import { Mapping } from "@tiptap/pm/transform";
 import { UPLOAD_CANCELLED, sameDocument, type ImageDialog, type UploadTarget } from "./upload.ts";
 
 interface Located {
@@ -245,7 +247,48 @@ export function dispatchUpload(
 		);
 		return;
 	}
+	if (dropped.length > 0) {
+		deleteAroundPlaceholders(getState, next, tr, dropped);
+		return;
+	}
 	next(tr);
+}
+
+/**
+ * A wider edit took placeholders with it. They come out first, out of the history,
+ * and the edit is what the history records: undoing it restores the text, and a
+ * placeholder restored with it would have no upload left to finish it, which would
+ * hold every later edit back from the form.
+ */
+function deleteAroundPlaceholders(
+	getState: () => EditorState,
+	next: (tr: Transaction) => void,
+	tr: Transaction,
+	dropped: Located[],
+): void {
+	const mapping = new Mapping();
+	for (const { node, pos } of dropped) {
+		const at = mapping.map(pos);
+		const out = getState()
+			.tr.delete(at, at + node.nodeSize)
+			.setMeta("addToHistory", false)
+			.setMeta("preventUpdate", true)
+			.setMeta(placeholdersKey, { remove: node.attrs.uploadId as string } satisfies PlaceholderChange);
+		mapping.appendMapping(out.mapping);
+		next(out);
+	}
+
+	const edit = getState().tr;
+	for (const step of tr.steps) {
+		const mapped = step.map(mapping);
+		if (mapped) edit.step(mapped);
+	}
+	const { from, to } = tr.selection;
+	const size = edit.doc.content.size;
+	edit.setSelection(
+		TextSelection.between(edit.doc.resolve(Math.min(from, size)), edit.doc.resolve(Math.min(to, size))),
+	);
+	next(edit);
 }
 
 function isDeletionOf(tr: Transaction, { node, pos }: Located): boolean {
