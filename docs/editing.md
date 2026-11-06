@@ -3,7 +3,7 @@ title: Write and format text
 description: The toolbar and selection menu of the editor in every Text Editor field, what each button does, and how links and colours work.
 nav_title: Write and format
 order: 3
-updated: 2026-10-26
+updated: 2026-11-06
 ---
 
 Every **Text Editor** field in the desk, such as a Note's content, a Task's description or the message of an email you compose, opens in the frappe-ui editor. You type into the field as before, and format with the toolbar above it or the menu that appears when you select text.
@@ -14,24 +14,24 @@ Every **Text Editor** field in the desk, such as a Note's content, a Task's desc
 
 The toolbar sits above the text. Its buttons show icons; hover over one to see its name. From left to right:
 
-| Button                                            | What it does                                                                                              |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **Heading 1** to **Heading 4**                    | Turn the current paragraph into a heading of that level, or back into a paragraph when it already is one. |
-| **Bold**, **Italic**, **Underline**, **Strike**   | Format the selected text.                                                                                 |
-| **Code**                                          | Formats the selected text as inline code.                                                                 |
-| **Clear formatting**                              | Removes the formatting of the selection and turns headings, lists and quotes back into plain paragraphs.  |
-| **Font Color**                                    | Opens a picker with a **Text Color** and a **Background Color** row of swatches.                          |
-| **Highlight**                                     | Highlights the selection in yellow, or removes the highlight.                                             |
-| **Bullet List**, **Ordered List**, **Task list**  | Start or end a bulleted, numbered or check list. Task list items have a box you tick.                     |
-| **Outdent**, **Indent**                           | Move the current list item one level out or in. They are greyed out where the item cannot move.           |
-| **Align Left**, **Align Center**, **Align Right** | Align the current paragraph. With several table cells selected, they align those cells.                   |
-| **Blockquote**                                    | Turns the paragraph into a quote.                                                                         |
-| **Code block**                                    | Turns the paragraph into a block of preformatted code.                                                    |
-| **Horizontal Rule**                               | Inserts a dividing line.                                                                                  |
-| **Link**                                          | Adds or edits a link on the selected text. See [Links](#links).                                           |
-| **Image / Gallery**                               | Opens a file picker for an image. See [Images](images.md).                                                |
-| **Table**                                         | Opens a grid to choose the size of a new table. See [Tables](tables.md).                                  |
-| **Undo**, **Redo**                                | Undo or redo your last change. They are greyed out when there is nothing to undo or redo.                 |
+| Button                                            | What it does                                                                                                   |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Heading 1** to **Heading 4**                    | Turn the current paragraph into a heading of that level, or back into a paragraph when it already is one.      |
+| **Bold**, **Italic**, **Underline**, **Strike**   | Format the selected text.                                                                                      |
+| **Code**                                          | Formats the selected text as inline code.                                                                      |
+| **Clear formatting**                              | Removes the formatting of the selection and turns headings, lists and quotes back into plain paragraphs.       |
+| **Font Color**                                    | Opens a picker with a **Text Color** and a **Background Color** row of swatches.                               |
+| **Highlight**                                     | Highlights the selection in yellow, or removes the highlight.                                                  |
+| **Bullet List**, **Ordered List**, **Task list**  | Start or end a bulleted, numbered or check list. Task list items have a box you tick.                          |
+| **Outdent**, **Indent**                           | Move the current list item one level out or in. They are greyed out where the item cannot move.                |
+| **Align Left**, **Align Center**, **Align Right** | Align the current paragraph. With several table cells selected, they align those cells.                        |
+| **Blockquote**                                    | Turns the paragraph into a quote.                                                                              |
+| **Code block**                                    | Turns the paragraph into a block of preformatted code.                                                         |
+| **Horizontal Rule**                               | Inserts a dividing line.                                                                                       |
+| **Link**                                          | Adds or edits a link on the selected text. See [Links](#links).                                                |
+| **Image**                                         | Opens Frappe's file dialog, to pick an image from your device, the library or a link. See [Images](images.md). |
+| **Table**                                         | Opens a grid to choose the size of a new table. See [Tables](tables.md).                                       |
+| **Undo**, **Redo**                                | Undo or redo your last change. They are greyed out when there is nothing to undo or redo.                      |
 
 A highlighted button means the format is on where the cursor is.
 

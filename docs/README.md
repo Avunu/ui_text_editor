@@ -3,10 +3,10 @@ title: Rich Text Editor for Desk
 description: Replaces the Quill editor behind every Text Editor field in the Frappe desk with the frappe-ui rich text editor.
 nav_title: Overview
 order: 0
-updated: 2026-10-26
+updated: 2026-11-06
 ---
 
-Frappe's newer apps use the rich text editor from [frappe-ui](https://github.com/frappe/frappe-ui), built on TipTap, while the desk still edits long text in Quill. Rich Text Editor for Desk replaces the Quill editor behind every **Text Editor** field in the desk with the frappe-ui editor, so notes, descriptions and email bodies are written in the same editor as Frappe's newer apps, with a selection menu, merged and coloured table cells, and image uploads that show their progress.
+Frappe's newer apps use the rich text editor from [frappe-ui](https://github.com/frappe/frappe-ui), built on TipTap, while the desk still edits long text in Quill. Rich Text Editor for Desk replaces the Quill editor behind every **Text Editor** field in the desk with the frappe-ui editor, so notes, descriptions and email bodies are written in the same editor as Frappe's newer apps, with a selection menu, merged and coloured table cells, and images through Frappe's own file dialog.
 
 It is for anyone who writes in the Frappe desk and for the administrators who run it. Nothing about your doctypes changes, and values that Quill saved open as they were. It runs on Frappe v16 and is free software under the [MIT licence](../license.txt).
 
@@ -24,9 +24,9 @@ Insert a table of the size you pick, then add and remove rows and columns, merge
 
 ![The row and column controls shown while the cursor is in a table](screenshots/table-menu-light.webp)
 
-### Image upload
+### Images
 
-Paste, drop or pick an image and it is uploaded to the site as a public file, so it also loads in emails and on web pages. In a saved document the file is attached to that document. See [Images](images.md).
+Pick an image from your device, the library or a link in Frappe's file dialog, or paste or drop one to open the dialog with it. A new file is uploaded as a public file, so it also loads in emails and on web pages. In a saved document the file is attached to that document. See [Images](images.md).
 
 ### Values that stay compatible with Quill
 

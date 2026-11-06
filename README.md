@@ -38,7 +38,7 @@ Full documentation: [docs.avunu.net/ui-text-editor/docs/](https://docs.avunu.net
 
 - A toolbar with headings 1 to 4, bold, italic, underline, strike, inline code, clear formatting, text and background colour, highlight, bullet, numbered and check lists, indent and outdent, left, centre and right alignment, quote, code block, horizontal rule, links, images, tables, undo and redo. See [docs/editing.md](docs/editing.md).
 - Selecting text shows a small formatting menu; being inside a table shows row, column, merge and cell colour controls. See [docs/tables.md](docs/tables.md).
-- Image upload: paste, drop or use the toolbar. Images are uploaded to Frappe's `upload_file` as public files, so they also load in e-mails and web pages. In a saved document they are attached to it; in a new one they are uploaded without an attachment. See [docs/images.md](docs/images.md).
+- Images through Frappe's file dialog: the toolbar's button opens it to pick from your device, the file library or a link, and a pasted or dropped image opens it with that file ready to upload. New files are uploaded as public files, so they also load in e-mails and web pages. In a saved document they are attached to it; in a new one they are uploaded without an attachment. See [docs/images.md](docs/images.md).
 - Values are saved the way Quill saved them, so print formats, e-mails and read-only views keep working. See [docs/saved-values.md](docs/saved-values.md).
 - Light and dark theme, following the desk.
 - A compact editor without the toolbar in grid rows, and `max_height` support.

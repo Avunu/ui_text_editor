@@ -3,7 +3,7 @@ title: Develop Rich Text Editor for Desk
 description: The dev shell, the build and its commands, the tests, CI, the release flow, and how to check these docs.
 nav_title: Development
 order: 9
-updated: 2026-10-26
+updated: 2026-11-06
 ---
 
 This page is for people changing the app. [How it works](architecture.md) explains the code: the control, the value conversion and the CSS scoping.
@@ -31,22 +31,24 @@ Without Nix, work in the app's folder inside a Frappe v16 bench (`apps/ui_text_e
 | `yarn typecheck`                   | Type-checks the code, including the Vue component through `vue-tsc`                                                                              |
 | `yarn lint`, `yarn lint:fix`       | Runs oxlint                                                                                                                                      |
 | `yarn format`, `yarn format:check` | Runs oxfmt                                                                                                                                       |
-| `yarn test`                        | Runs the unit tests of the CSS scoping (`build/scope.test.ts`)                                                                                   |
+| `yarn test`                        | Runs the unit tests: the CSS scoping and the image dialog                                                                                        |
 | `yarn check:scope`                 | Checks that no rule of the built stylesheet can match outside the editor. Run it after a build                                                   |
 | `frappe-test --reuse-site`         | Runs the Python tests on the dev site, with coverage, the way CI runs them                                                                       |
 | `frappe-shots`                     | Rebuilds the demo site from `ui_text_editor/demo.py` and retakes the screenshots in `docs/screenshots/`                                          |
 
 ## Tests
 
-| File                                 | Covers                                                                                                                                                                        |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `build/scope.test.ts`                | How each kind of selector is scoped: ordinary selectors, `:root`, `html` and `body`, class names that only look like them, and the dark theme switch                          |
-| `ui_text_editor/tests/test_hooks.py` | The app is installed, `hooks.py` names the two bundles, the Vite config writes those names, and, where the bundle is built and registered, each one resolves to a hashed file |
-| `ui_text_editor/tests/test_demo.py`  | The demo hook creates the demo Note in Quill's markup, once                                                                                                                   |
+| File                                 | Covers                                                                                                                                                                                                                                                    |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build/scope.test.ts`                | How each kind of selector is scoped: ordinary selectors, `:root`, `html` and `body`, class names that only look like them, and the dark theme switch                                                                                                      |
+| `src/upload.test.ts`                 | The file dialog, against a stand-in for `frappe.ui.FileUploader`: what it is opened with, the attachment target, success, cancel, a library choice arriving after the dialog closed, a second file while it is open, retries, private and non-image files |
+| `src/images.test.ts`                 | With a real ProseMirror schema: which images count as pending, which transactions settle an upload, and the removal of cancelled ones                                                                                                                     |
+| `ui_text_editor/tests/test_hooks.py` | The app is installed, `hooks.py` names the two bundles, the Vite config writes those names, and, where the bundle is built and registered, each one resolves to a hashed file                                                                             |
+| `ui_text_editor/tests/test_demo.py`  | The demo hook creates the demo Note in Quill's markup, once                                                                                                                                                                                               |
 
 The built-bundle test in `test_hooks.py` skips itself when the bundle is not built or not registered. The nightly integration run sets `UI_TEXT_EDITOR_REQUIRE_BUNDLE=1` (`nightly-suites` in `pyproject.toml`), and then a missing bundle fails it.
 
-There are no browser tests of the editor itself. The screenshots that `frappe-shots` takes (`marketplace/screenshots.ts`) open the demo Note and check that the converted content, a table included, appears in the editor.
+There are no browser tests of the editor in the repository. The screenshots that `frappe-shots` takes (`marketplace/screenshots.ts`) open the demo Note and check that the converted content, a table included, appears in the editor.
 
 ## Continuous integration
 

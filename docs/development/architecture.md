@@ -3,7 +3,7 @@ title: How it works
 description: How the bundle replaces the desk's Text Editor control, how values are converted to and from Quill's markup, and why the stylesheet is scoped.
 nav_title: How it works
 order: 10
-updated: 2026-10-26
+updated: 2026-11-06
 ---
 
 The app has no server-side behaviour. `hooks.py` adds one script and one stylesheet to every desk page, and everything else happens in the browser.
@@ -22,7 +22,8 @@ src/
   FrappeEditor.vue      the editor: frappe-ui's Editor, its extensions and menus
   toolbar.ts            the toolbar, the selection menu and the table menu
   html.ts               conversion between the stored value and the editor's HTML
-  upload.ts             image uploads to Frappe's upload_file
+  upload.ts             the one file dialog (frappe.ui.FileUploader) images go through
+  images.ts             the editor commands and plugin that lead to it
   scope.ts              the scope class and the portal host for pop-ups
   popups.ts             createApp for frappe-ui's own pop-up apps
   style.css             Tailwind layers and the few rules of the app's own
@@ -58,7 +59,38 @@ The control keeps the contract the rest of the desk relies on:
 
 `src/toolbar.ts` lays the toolbar out like Quill's and defines the items frappe-ui's presets lack: underline, clear formatting, task list, code block, indent and outdent. The selection menu has Bold, Italic, Underline, Strike and Link; the table menu is frappe-ui's `tableToolbar`.
 
-`src/upload.ts` posts images to `/api/method/upload_file` with the CSRF token, `is_private=0` and `folder=Home`, and the document's doctype, name and field when the form is saved. It reports progress to the editor and turns Frappe's `_server_messages` into the error the editor shows.
+### Images
+
+Images go through Frappe's file dialog, `frappe.ui.FileUploader`, so they get its device, library and link choices and its upload code. Frappe's bundle loads it with the desk. `src/upload.ts` opens it, and `src/images.ts` is the extension that leads frappe-ui's entry points to it:
+
+| Entry point                  | How it gets to the dialog                                                                                                                                                                                                                      |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The toolbar's **Image**      | frappe-ui's `InsertImage` runs the `selectAndUploadImage` command, which `FrappeImages` replaces. Tiptap merges commands in priority order, so the lower priority wins. The dialog opens empty, and each chosen image goes in with `setImage`. |
+| Paste                        | frappe-ui inserts a placeholder and calls `uploadFunction`, which preloads the dialog and resolves with the File document. Several files come one at a time, each waiting for the previous one.                                                |
+| Drop                         | `FrappeImages` replaces the `dropFiles` command, so several images skip frappe-ui's gallery dialog: each goes to `uploadImage`, and they all join one dialog.                                                                                  |
+| An image's **Replace image** | `FrappeImages` replaces `replaceImage`, so the image stays until the upload is done. frappe-ui's own command swaps it for a placeholder first, which closing the dialog would lose.                                                            |
+
+The dialog does not report everything the editor needs, so `upload.ts` reads it from what the dialog does:
+
+- **Closing.** There is no callback, so it listens for `hidden.bs.modal`. It settles there rather than on success, so that the next file of a multi-file paste opens a dialog of its own instead of joining the closing one.
+- **A library choice closes the dialog before it uploads** (`upload_via_file_browser`), so the document can arrive after `hidden.bs.modal`. `upload.ts` wraps the instance's `upload_files`, which the dialog's primary action calls, to know that an upload is running and wait for it.
+- **Which file finished.** `on_success` gets the File document only. The dialog sets `doc` on the row of its list just before calling it, so that is how a document finds the placeholder waiting for it. No row means a library or link choice, which goes in at the cursor.
+- **A retry after a failure** sends every file in the list again, so a file that already got its document is ignored.
+
+Options passed to the dialog, from `file_uploader.bundle.js` and `FileUploader.vue`:
+
+- `make_attachments_public: true` and `allow_toggle_private: false`: images stay public, for the reason in [Where the file goes](../images.md#where-the-file-goes). The dialog still forces private for a user who may not upload public files (`frappe.utils.can_upload_public_files`), and `upload_file` keeps a library file's own privacy, so `upload.ts` warns when the document it gets back is private.
+- `restrictions.allowed_file_types: ["image/*"]`: covers the device and the file input. The library and the link are not restricted, so `upload.ts` checks the extension of what comes back from them.
+- `allow_google_drive: false`: its picker closes the dialog first, and its cancel opens the form's attachment dialog.
+
+It also sets `keep_grid_form_open` on the dialog's `frappe.ui.Dialog`, because closing any dialog otherwise closes an open grid row form.
+
+frappe-ui treats a rejected upload as a quiet cancel only when its own `AbortController` fired, and that is out of reach of `uploadFunction`. Any other rejection is shown on the image, with the error's message. So a cancel rejects with the message `UPLOAD_CANCELLED`, and a plugin in `images.ts` removes an image carrying it, in the same transaction, before it can render. Two more things follow from a placeholder that can wait behind a dialog:
+
+- `FrappeEditor.vue` does not report a change while an image is loading, and reports none at all if the document ends up as it was. A cancelled paste leaves the form clean.
+- Transactions that finish an upload stay out of the undo history, which then only records the placeholder being inserted. One undo removes the image, and undo cannot bring back a placeholder with no upload behind it.
+
+Uploads settle one per task. frappe-ui's content watcher can run in the middle of the next node view update, and with two updates in one task it restores the first one's HTML over the second, which loses that image.
 
 ## The scoped stylesheet
 
