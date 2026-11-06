@@ -12,7 +12,7 @@
 			:extensions="extensions"
 			:placeholder="placeholder"
 			:editable="editable"
-			:upload-function="uploadFunction"
+			:upload-function="images.upload"
 			@blur="emit('blur')"
 		>
 			<EditorFixedMenu
@@ -42,10 +42,11 @@ import {
 	Heading,
 	RichTextKit,
 	type TiptapEditor,
-	type UploadFunction,
 } from "frappe-ui/editor";
 import type { EditorEvents } from "@tiptap/core";
+import { FrappeImages, createEditFilter } from "./images";
 import { BUBBLE_MENU, TABLE_MENU, TOOLBAR } from "./toolbar";
+import { createImageDialog, type UploadTarget } from "./upload";
 
 /**
  * A rich-text editor on frappe-ui's `Editor`.
@@ -55,7 +56,7 @@ import { BUBBLE_MENU, TABLE_MENU, TOOLBAR } from "./toolbar";
  * `modelValue` being replaced from outside, and never for the editor tidying
  * its own document.
  */
-withDefaults(
+const props = withDefaults(
 	defineProps<{
 		modelValue?: string;
 		placeholder?: string;
@@ -64,9 +65,17 @@ withDefaults(
 		toolbar?: boolean;
 		/** CSS max-height of the content area; it scrolls beyond that. */
 		maxHeight?: string;
-		uploadFunction?: UploadFunction;
+		/** The document uploaded images attach to; asked when the file dialog opens. */
+		uploadTarget?: () => UploadTarget;
 	}>(),
-	{ modelValue: "", placeholder: "", editable: true, toolbar: true, maxHeight: "" },
+	{
+		modelValue: "",
+		placeholder: "",
+		editable: true,
+		toolbar: true,
+		maxHeight: "",
+		uploadTarget: () => ({}),
+	},
 );
 
 const emit = defineEmits<{
@@ -77,9 +86,16 @@ const emit = defineEmits<{
 
 const editor = useTemplateRef<{ isEmpty: boolean; editor: TiptapEditor | null }>("editor");
 
+const images = createImageDialog({
+	target: () => props.uploadTarget(),
+	editable: () => props.editable,
+	insert: (media) => editor.value?.editor?.chain().focus().setImage({ src: media.file_url }).run(),
+	focus: () => editor.value?.editor?.commands.focus(),
+});
+
 /**
  * What the editor can author. Rich text, tables and task lists, plus images
- * (uploaded through Frappe). Left out on purpose:
+ * (through Frappe's file dialog). Left out on purpose:
  * - slash commands, mentions, emoji and tags open suggestion popups that
  *   frappe-ui mounts on `<body>` outside the scoped stylesheet;
  * - video, attachments, iframe embeds and the image gallery, which Frappe's
@@ -107,6 +123,7 @@ const extensions = markRaw([
 		typography: false,
 	}),
 	Heading.configure({ levels: [1, 2, 3, 4, 5, 6] }),
+	FrappeImages.configure({ dialog: images, target: () => props.uploadTarget() }),
 ]);
 
 /**
@@ -115,12 +132,17 @@ const extensions = markRaw([
  * after a final list, say) the first time the editor is touched. Reporting
  * those would write to the model, and dirty the form, just from clicking into
  * a field. Only a transaction that itself changed the document is an edit.
+ *
+ * An image's placeholder is not one yet either: it can sit behind the file
+ * dialog for as long as the user likes, and closing the dialog removes it. The
+ * model hears about the image once it has a URL, so a cancelled paste leaves the
+ * form clean (`createEditFilter`).
  */
 let instance: TiptapEditor | null = null;
+const isEdit = createEditFilter();
 
 function onUpdate({ editor: tiptap, transaction }: EditorEvents["update"]) {
-	if (!transaction.docChanged) return;
-	emit("change", tiptap.getHTML(), tiptap.isEmpty);
+	if (isEdit(transaction, tiptap.state.doc)) emit("change", tiptap.getHTML(), tiptap.isEmpty);
 }
 
 onMounted(() => {

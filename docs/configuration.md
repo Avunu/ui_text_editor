@@ -3,7 +3,7 @@ title: Configuration
 description: The field properties the editor follows, the Frappe settings that govern image uploads, and everything the app adds to a site.
 nav_title: Configuration
 order: 2
-updated: 2026-10-26
+updated: 2026-11-06
 ---
 
 Rich Text Editor for Desk has no settings page, no site configuration keys and no roles of its own. Once it is installed and its bundle is built, every **Text Editor** field in the desk uses the new editor. What you can shape is the field itself, through the properties Frappe already has, and the upload rules Frappe applies to images.
@@ -22,13 +22,14 @@ In a child table row, the editor has no toolbar and no menus, because a grid row
 
 ## Image uploads
 
-Images go to Frappe's own `upload_file` endpoint as public files in the **Home** folder, so Frappe's file rules apply to them as they apply to any upload:
+Images go through Frappe's file dialog to its `upload_file` endpoint, as public files in the **Home** folder, so Frappe's file rules apply to them as they apply to any upload:
 
 | Setting                                                                  | Effect on the editor                                                                                                                                                        |
 | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Max File Size (MB)** in System Settings                                | The largest file Frappe accepts. When it is empty, Frappe uses `max_file_size` (in bytes) from the site configuration, and 25 MB when that is not set either.               |
 | **Allowed File Extensions** in System Settings                           | When set, an image whose extension is not listed is refused.                                                                                                                |
-| **Only allow System Managers to upload public files** in System Settings | When ticked, only System Managers can add images, because the editor always uploads public files.                                                                           |
+| **Only allow System Managers to upload public files** in System Settings | When ticked, the dialog uploads everyone else's images as private files, and the editor warns them that the image will not load in emails or on web pages.                  |
+| **Max Attachments** of the DocType (`max_attachments`)                   | Each image attached to a saved document counts towards it.                                                                                                                  |
 | Write permission on the document                                         | In a saved document, the image is attached to it, and Frappe checks that you may write to that document. In a new, unsaved document the upload is not attached to anything. |
 
 [Images](images.md) explains why the files are public, and [Limitations and troubleshooting](troubleshooting.md#an-image-does-not-upload) lists the messages these rules produce.

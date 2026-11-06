@@ -17,7 +17,7 @@
 		"format:check": "oxfmt --check",
 		"upgrade": "npx npm-check-updates -u && yarn install",
 		"check:scope": "node build/check-scope.mjs",
-		"test": "node --test \"build/**/*.test.ts\"",
+		"test": "node --test --test-timeout=30000 \"build/**/*.test.ts\" \"src/**/*.test.ts\"",
 		"lint:py": "uv run --frozen --project tools ruff check . && uv run --frozen --project tools ruff format --check .",
 		"typecheck:py": "uv run --frozen --project tools ty check --python \"${FRAPPE_BENCH_ROOT:-.frappe-nix/bench}/env\"",
 		"check": "yarn -s format:check && yarn -s lint && yarn -s typecheck",

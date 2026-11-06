@@ -90,6 +90,12 @@ const Outdent: CommandMenuItem = {
 	isDisabled: (editor) => !LIST_ITEMS.some((item) => editor.can().liftListItem(item)),
 };
 
+/**
+ * frappe-ui's item, without "Gallery": galleries are turned off. Its command
+ * opens Frappe's file dialog here (`images.ts`), not a native file picker.
+ */
+const ImageItem: CommandMenuItem = { ...InsertImage, label: "Image" };
+
 // Quill offered Heading 1-6; frappe-ui's own group stops at 4 and leads with H2.
 const Headings: MenuGroupItem = {
 	type: "group",
@@ -126,7 +132,7 @@ export const TOOLBAR: MenuItem[] = [
 	HorizontalRule,
 	Separator,
 	InsertLink,
-	InsertImage,
+	ImageItem,
 	InsertTable,
 	Separator,
 	Undo,
