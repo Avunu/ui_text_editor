@@ -14,7 +14,7 @@ import { createApp, h, reactive, type App } from "vue";
 import FrappeEditor from "./FrappeEditor.vue";
 import { fromFrappe, toFrappe } from "./html";
 import { PORTAL_TARGET_KEY, SCOPE_CLASS, portalHost } from "./scope";
-import { createUploader } from "./upload";
+import { uploadTarget } from "./upload";
 
 /** Same wait Frappe's Quill control uses before writing to the model. */
 const COMMIT_DELAY = 300;
@@ -63,12 +63,6 @@ export function installTextEditorControl(): void {
 			});
 			this.editor_state = state;
 
-			const uploadFunction = createUploader(() => {
-				const frm = this.frm;
-				if (!frm || frm.is_new()) return {};
-				return { doctype: frm.doctype, docname: frm.docname, fieldname: this.df.fieldname };
-			});
-
 			this.editor_root = document.createElement("div");
 			this.editor_root.className = SCOPE_CLASS;
 			this.input_area.append(this.editor_root);
@@ -82,7 +76,7 @@ export function installTextEditorControl(): void {
 						editable: state.editable,
 						toolbar: state.toolbar,
 						maxHeight: state.maxHeight,
-						uploadFunction,
+						uploadTarget: () => uploadTarget(this.frm, this.df.fieldname),
 						onChange: (html: string, isEmpty: boolean) => this.on_editor_change(html, isEmpty),
 						onBlur: () => this.commit(),
 					}),

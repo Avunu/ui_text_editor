@@ -20,6 +20,21 @@
 import type { Editor as CoreEditor } from "@tiptap/core";
 import type { Component } from "vue";
 
+// The image and drop commands frappe-ui's extensions add.
+declare module "@tiptap/core" {
+	interface Commands<ReturnType> {
+		image: {
+			setImage: (options: { src: string }) => ReturnType;
+			uploadImage: (file: File) => ReturnType;
+			selectAndUploadImage: () => ReturnType;
+			replaceImage: (pos: number, file: File) => ReturnType;
+		};
+		mediaDrop: {
+			dropFiles: (files: File[]) => ReturnType;
+		};
+	}
+}
+
 /** TipTap's `Editor` instance, as passed to menu item callbacks. */
 export type TiptapEditor = CoreEditor;
 
