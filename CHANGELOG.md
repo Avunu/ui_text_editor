@@ -1,5 +1,13 @@
 # Changelog
 
+## [16.1.0](https://github.com/Avunu/ui_text_editor/compare/v16.0.0...v16.1.0) (2026-11-07)
+
+
+### Features
+
+* insert images through Frappe's file dialog ([#132](https://github.com/Avunu/ui_text_editor/issues/132)) ([cea86c6](https://github.com/Avunu/ui_text_editor/commit/cea86c6d4baf772d316617ae59abab886d35f88a))
+* show the app's logo in the About dialog, on frappe-nix 2.4.0 ([#134](https://github.com/Avunu/ui_text_editor/issues/134)) ([c0e51b9](https://github.com/Avunu/ui_text_editor/commit/c0e51b918ad1ecf59ed946c64218a77d47858eb7))
+
 ## [16.0.0](https://github.com/Avunu/ui_text_editor/compare/v0.1.1...v16.0.0) (2026-10-28)
 
 
