@@ -14,7 +14,7 @@
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
-		"types": ["node", "vite/client"],
+		"types": ["node", "vite/client", "frappe-types/global"],
 		"paths": {
 			"frappe-ui/editor": ["./src/types/frappe-ui-editor.d.ts"]
 		}

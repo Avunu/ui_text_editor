@@ -27,12 +27,10 @@ interface EditorState {
 	maxHeight: string;
 }
 
-type ControlConstructor = new (...args: never[]) => FrappeControl;
-
 export function installTextEditorControl(): void {
-	const Base = frappe.ui.form.ControlCode as unknown as ControlConstructor;
-
-	class ControlTextEditor extends Base {
+	class ControlTextEditor extends frappe.ui.form.ControlCode {
+		/** The HTML in the model; BaseControl leaves a control's value untyped. */
+		declare value?: string | null;
 		// `declare`: Frappe's constructor calls `refresh()` -- which builds the
 		// editor -- from inside `super()`, and a plain field declaration would be
 		// re-initialised afterwards, wiping what was just set.
@@ -138,6 +136,5 @@ export function installTextEditorControl(): void {
 		}
 	}
 
-	// FrappeControl is the slice of frappe-types' BaseControl this class uses.
-	frappe.ui.form.ControlTextEditor = ControlTextEditor as unknown as typeof frappe.ui.form.ControlTextEditor;
+	frappe.ui.form.ControlTextEditor = ControlTextEditor;
 }
