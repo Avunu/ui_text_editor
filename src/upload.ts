@@ -15,7 +15,7 @@
  * and a failed upload stays in its list with the server's message.
  */
 
-import type { Form, FrappeDoc, FrappeFileUploaderComponent, FrappeFileUploaderFile } from "frappe-types";
+import type { Form, FrappeDoc, FrappeFileUploaderFile } from "frappe-types";
 import type { UploadedMedia, UploadFunction } from "frappe-ui/editor";
 
 /** The File document `upload_file` answers with: the fields of it read here. */
@@ -31,21 +31,6 @@ interface FileDoc extends FrappeDoc {
  */
 function isFileDoc(file: FrappeDoc | FrappeFileUploaderFile | null): file is FileDoc {
 	return !!file && "file_url" in file && typeof file.file_url === "string" && file.file_url !== "";
-}
-
-/** The library and link tabs of the dialog, while they are the ones showing. */
-interface UploaderTabs {
-	file_browser?: { selected_node: { file_url?: string } };
-	web_link?: { url: string; invalid_input(error: string): void };
-}
-
-/**
- * The uploader's template refs (`ref="file_browser"` and `ref="web_link"` in
- * `FileUploader.vue`). frappe-types declares only what the component exposes,
- * not Vue's `$refs`, so this is the one place they are typed.
- */
-function uploaderTabs(uploader: FrappeFileUploaderComponent): UploaderTabs {
-	return (uploader as FrappeFileUploaderComponent & { $refs: UploaderTabs }).$refs;
 }
 
 /** The document an upload is attached to; empty while it is still unsaved. */
@@ -221,7 +206,7 @@ function openDialog(owner: ImageDialogOptions): Session {
 	const uploadFiles = dialog.upload_files.bind(dialog);
 
 	const uploadIfImage = async (url: string) => {
-		const { web_link: link } = uploaderTabs(dialog.uploader);
+		const { web_link: link } = dialog.uploader.$refs;
 		const button = modal.get_primary_btn();
 		checking = true;
 		button.prop("disabled", true);
@@ -242,7 +227,7 @@ function openDialog(owner: ImageDialogOptions): Session {
 	// dialog does not mean nothing more is coming: remember the running upload.
 	dialog.upload_files = () => {
 		if (checking && uploading) return uploading;
-		const { file_browser: library, web_link: link } = uploaderTabs(dialog.uploader);
+		const { file_browser: library, web_link: link } = dialog.uploader.$refs;
 		const url = library?.selected_node.file_url ?? link?.url;
 		uploading = url ? uploadIfImage(url) : uploadFiles();
 		return uploading;
