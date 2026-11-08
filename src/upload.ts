@@ -15,61 +15,37 @@
  * and a failed upload stays in its list with the server's message.
  */
 
+import type { Form, FrappeDoc, FrappeFileUploaderComponent, FrappeFileUploaderFile } from "frappe-types";
 import type { UploadedMedia, UploadFunction } from "frappe-ui/editor";
 
-/** The File document `upload_file` answers with. */
-interface FileDoc extends UploadedMedia {
-	name: string;
+/** The File document `upload_file` answers with: the fields of it read here. */
+interface FileDoc extends FrappeDoc {
+	file_url: string;
 	file_name?: string;
 	is_private?: 0 | 1;
 }
 
-/** A row in the dialog's list of the device's files. */
-interface DialogFile {
-	/** The file as it was added. `file_obj` is what gets sent, which the crop tool replaces. */
-	cropper_file: File;
-	file_obj: File;
-	name: string;
-	doc: FileDoc | null;
-	failed: boolean;
-	error_message: string | null;
+/**
+ * Whether `on_success` was handed an uploaded File document. Without `as_dataurl`
+ * it gets the document, or null when the response held none (`FileUploader.vue`).
+ */
+function isFileDoc(file: FrappeDoc | FrappeFileUploaderFile | null): file is FileDoc {
+	return !!file && "file_url" in file && typeof file.file_url === "string" && file.file_url !== "";
 }
 
-/** `frappe.ui.FileUploader`, which frappe-types does not declare; the parts used here. */
-interface FileUploader {
-	dialog: {
-		$wrapper: { on(event: string, handler: () => void): unknown };
-		keep_grid_form_open: boolean;
-		get_primary_btn(): { prop(name: string, value: boolean): unknown };
-	};
-	/** The Vue app inside the dialog. */
-	uploader: {
-		files: DialogFile[];
-		add_files(files: File[]): void;
-		/** The library and link tabs, while they are the ones showing. */
-		$refs: {
-			file_browser?: { selected_node: { file_url?: string } };
-			web_link?: { url: string; invalid_input(error: string): void };
-		};
-	};
-	upload_files(): Promise<unknown>;
+/** The library and link tabs of the dialog, while they are the ones showing. */
+interface UploaderTabs {
+	file_browser?: { selected_node: { file_url?: string } };
+	web_link?: { url: string; invalid_input(error: string): void };
 }
 
-declare module "frappe-types" {
-	interface FrappeUiNamespace {
-		FileUploader: new (options: {
-			doctype?: string;
-			docname?: string;
-			fieldname?: string;
-			folder?: string;
-			dialog_title?: string;
-			restrictions?: { allowed_file_types?: string[] };
-			make_attachments_public?: boolean;
-			allow_toggle_private?: boolean;
-			allow_google_drive?: boolean;
-			on_success?: (doc: FileDoc | null) => void;
-		}) => FileUploader;
-	}
+/**
+ * The uploader's template refs (`ref="file_browser"` and `ref="web_link"` in
+ * `FileUploader.vue`). frappe-types declares only what the component exposes,
+ * not Vue's `$refs`, so this is the one place they are typed.
+ */
+function uploaderTabs(uploader: FrappeFileUploaderComponent): UploaderTabs {
+	return (uploader as FrappeFileUploaderComponent & { $refs: UploaderTabs }).$refs;
 }
 
 /** The document an upload is attached to; empty while it is still unsaved. */
@@ -84,7 +60,7 @@ export interface UploadTarget {
  * new document, or a control with no form.
  */
 export function uploadTarget(
-	frm: { doctype: string; docname: string; is_new(): boolean } | undefined,
+	frm: Pick<Form, "doctype" | "docname" | "is_new"> | undefined,
 	fieldname: string,
 ): UploadTarget {
 	if (!frm || frm.is_new()) return {};
@@ -179,7 +155,7 @@ function warnIfPrivate(doc: FileDoc): void {
 }
 
 /** Frappe writes a failure into its list, which nobody sees once the dialog is gone. */
-function reportFailure(files: DialogFile[], failure: DialogFile): void {
+function reportFailure(files: FrappeFileUploaderFile[], failure: FrappeFileUploaderFile): void {
 	const lost = files.filter((file) => !file.doc).map((file) => frappe.utils.escape_html(file.name));
 	frappe.show_alert({
 		message: __("Could not upload {0}: {1}", [
@@ -200,8 +176,8 @@ function openDialog(owner: ImageDialogOptions): Session {
 	let checking = false;
 	let closed = false;
 
-	const onSuccess = (doc: FileDoc | null) => {
-		if (!doc?.file_url) {
+	const onSuccess = (doc: FrappeDoc | FrappeFileUploaderFile | null) => {
+		if (!isFileDoc(doc)) {
 			frappe.show_alert({ message: __("Could not upload the file."), indicator: "red" });
 			return;
 		}
@@ -216,7 +192,10 @@ function openDialog(owner: ImageDialogOptions): Session {
 		else owner.insert(doc);
 	};
 
-	const dialog = new frappe.ui.FileUploader({
+	// The desk loads the uploader's bundle at startup (frappe upload.js).
+	const FileUploader = frappe.ui.FileUploader;
+	if (!FileUploader) throw new Error("frappe.ui.FileUploader is not loaded");
+	const dialog = new FileUploader({
 		...owner.target(),
 		dialog_title: __("Insert Image"),
 		folder: "Home",
@@ -232,14 +211,18 @@ function openDialog(owner: ImageDialogOptions): Session {
 		on_success: onSuccess,
 	});
 
+	// Without a `wrapper` the uploader makes its modal in the constructor (file_uploader.bundle.js).
+	const modal = dialog.dialog;
+	if (!modal) throw new Error("frappe.ui.FileUploader made no dialog");
+
 	// Closing would otherwise close a grid row form the field is in (dialog.js).
-	dialog.dialog.keep_grid_form_open = true;
+	modal.keep_grid_form_open = true;
 
 	const uploadFiles = dialog.upload_files.bind(dialog);
 
 	const uploadIfImage = async (url: string) => {
-		const { web_link: link } = dialog.uploader.$refs;
-		const button = dialog.dialog.get_primary_btn();
+		const { web_link: link } = uploaderTabs(dialog.uploader);
+		const button = modal.get_primary_btn();
 		checking = true;
 		button.prop("disabled", true);
 		const loaded = await loadsAsImage(url);
@@ -259,7 +242,7 @@ function openDialog(owner: ImageDialogOptions): Session {
 	// dialog does not mean nothing more is coming: remember the running upload.
 	dialog.upload_files = () => {
 		if (checking && uploading) return uploading;
-		const { file_browser: library, web_link: link } = dialog.uploader.$refs;
+		const { file_browser: library, web_link: link } = uploaderTabs(dialog.uploader);
 		const url = library?.selected_node.file_url ?? link?.url;
 		uploading = url ? uploadIfImage(url) : uploadFiles();
 		return uploading;
@@ -288,7 +271,7 @@ function openDialog(owner: ImageDialogOptions): Session {
 			}),
 	};
 
-	dialog.dialog.$wrapper.on("hidden.bs.modal", () => {
+	modal.$wrapper.on("hidden.bs.modal", () => {
 		closed = true;
 		if (session === opened) session = null;
 		// What failed by now was on show when the dialog was closed.
