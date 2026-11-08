@@ -1488,10 +1488,10 @@ fill-range@^7.1.1:
   dependencies:
     to-regex-range "^5.0.1"
 
-frappe-types@^16.5.0:
-  version "16.5.0"
-  resolved "https://registry.yarnpkg.com/frappe-types/-/frappe-types-16.5.0.tgz#094b3771b31fb9cce6f4ecea3964406af946f594"
-  integrity sha512-FNeR2hgw5ZjifNylxhsVOJGfHP6D/e1BydupGlpjMOJxh1wWrhu8EEsZT2/aNJxSdVM8IR5jFWd19jCsjJTWMA==
+frappe-types@^16.6.0:
+  version "16.6.0"
+  resolved "https://registry.yarnpkg.com/frappe-types/-/frappe-types-16.6.0.tgz#686d81838e81c3e8edd5ebab69588a38b3b3a259"
+  integrity sha512-fpN7/Um8iutiDBJ5YXcy0o7gFRwY0aGtUrRO1hdUdol89uwyb75oJwVDiPJalHGwHvD+qBSoPfAy9Sbn0uo7UA==
   dependencies:
     "@types/jquery" "^3.5"
 

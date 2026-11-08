@@ -3,6 +3,7 @@
 
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
+import type { FrappeDoc, FrappeFileUploaderFile, FrappeFileUploaderOptions } from "frappe-types";
 import type { UploadedMedia } from "frappe-ui/editor";
 import {
 	IMAGE_CHECK_TIMEOUT,
@@ -13,15 +14,8 @@ import {
 	type ImageDialogOptions,
 } from "./upload.ts";
 
-type Doc = UploadedMedia & { name: string; file_name?: string; is_private?: 0 | 1 };
-type Entry = {
-	cropper_file: File;
-	file_obj: File;
-	name: string;
-	doc: Doc | null;
-	failed: boolean;
-	error_message: string | null;
-};
+/** The File document `upload_file` answers with. */
+type Doc = FrappeDoc & { file_url: string; file_name?: string; is_private?: 0 | 1 };
 
 /** Stands in for `frappe.ui.FileUploader`, with what `FileUploader.vue` does to its list. */
 class FakeUploader {
@@ -29,7 +23,7 @@ class FakeUploader {
 	/** What the dialog's own checks refuse, as `check_restrictions` does. */
 	static refuse = new Set<File>();
 
-	entries: Entry[] = [];
+	entries: FrappeFileUploaderFile[] = [];
 	dialog = {
 		keep_grid_form_open: false,
 		get_primary_btn: () => ({
@@ -52,10 +46,17 @@ class FakeUploader {
 				this.entries.push({
 					cropper_file: file,
 					file_obj: file,
+					crop_box_data: null,
+					optimize: false,
 					name: file.name,
 					doc: null,
+					progress: 0,
+					total: file.size,
 					failed: false,
+					request_succeeded: false,
 					error_message: null,
+					uploading: false,
+					private: false,
 				});
 			}
 		},
@@ -66,12 +67,18 @@ class FakeUploader {
 	};
 	buttonDisabled = false;
 	hidden: () => void = () => undefined;
-	options: Record<string, unknown> & { on_success: (doc: Doc | null) => void };
+	options: FrappeFileUploaderOptions;
 	upload_files: () => Promise<unknown> = () => Promise.resolve();
 
-	constructor(options: FakeUploader["options"]) {
+	constructor(options: FrappeFileUploaderOptions = {}) {
 		this.options = options;
 		FakeUploader.opened.push(this);
+	}
+
+	/** Reports an uploaded document (or none) to the caller, as the dialog does. */
+	succeed(doc: Doc | null) {
+		assert.ok(this.options.on_success);
+		this.options.on_success(doc);
 	}
 
 	/** A device file finished: the dialog sets `doc`, then reports it. */
@@ -79,7 +86,7 @@ class FakeUploader {
 		const entry = this.entries.find((candidate) => candidate.cropper_file === file);
 		assert.ok(entry);
 		entry.doc = doc;
-		this.options.on_success(doc);
+		this.succeed(doc);
 	}
 
 	/** What the server's refusal does to a row: the dialog writes it there, and nothing else. */
@@ -118,7 +125,7 @@ Object.assign(globalThis, {
 });
 
 const useUploader = (uploader: typeof FakeUploader) => {
-	(frappe.ui as unknown as { FileUploader: unknown }).FileUploader = uploader;
+	frappe.ui.FileUploader = uploader;
 };
 
 const inserted: UploadedMedia[] = [];
@@ -135,6 +142,7 @@ function editor(overrides: Partial<ImageDialogOptions> = {}) {
 
 const png = (name = "a.png") => new File(["x"], name, { type: "image/png" });
 const doc = (name: string, extra: Partial<Doc> = {}): Doc => ({
+	doctype: "File",
 	name,
 	file_name: `${name}.png`,
 	file_url: `/files/${name}.png`,
@@ -187,18 +195,21 @@ test("the target is read when the dialog opens", () => {
 });
 
 test("attachment target for a saved, a new and a form-less control", () => {
-	const form = (isNew: boolean) => ({ doctype: "Note", docname: "N-1", is_new: () => isNew });
-	assert.deepEqual(uploadTarget(form(false), "content"), {
+	// Form#is_new() is 1 for an unsaved document, and undefined once it is saved.
+	const form = (isNew: 1 | undefined) => ({ doctype: "Note", docname: "N-1", is_new: () => isNew });
+	assert.deepEqual(uploadTarget(form(undefined), "content"), {
 		doctype: "Note",
 		docname: "N-1",
 		fieldname: "content",
 	});
-	assert.deepEqual(uploadTarget(form(true), "content"), {});
+	assert.deepEqual(uploadTarget(form(1), "content"), {});
 	assert.deepEqual(uploadTarget(undefined, "content"), {});
 });
 
 test("a new document's dialog passes no attachment", () => {
-	editor({ target: () => uploadTarget({ doctype: "Note", docname: "x", is_new: () => true }, "c") }).pick();
+	editor({
+		target: () => uploadTarget({ doctype: "Note", docname: "x", is_new: () => 1 as const }, "c"),
+	}).pick();
 	const { options } = last();
 	assert.equal(options.doctype, undefined);
 	assert.equal(options.docname, undefined);
@@ -207,8 +218,8 @@ test("a new document's dialog passes no attachment", () => {
 
 test("a chosen image is inserted at the cursor, each one of several", () => {
 	editor().pick();
-	last().options.on_success(doc("one"));
-	last().options.on_success(doc("two"));
+	last().succeed(doc("one"));
+	last().succeed(doc("two"));
 	assert.deepEqual(
 		inserted.map((media) => media.file_url),
 		["/files/one.png", "/files/two.png"],
@@ -307,7 +318,7 @@ test("with nothing uploading, a closed dialog settles at once", async () => {
 test("while an upload runs, a closed dialog waits for it", async () => {
 	let finish = () => {};
 	class Slow extends FakeUploader {
-		constructor(options: FakeUploader["options"]) {
+		constructor(options?: FrappeFileUploaderOptions) {
 			super(options);
 			this.upload_files = () => new Promise<void>((resolve) => (finish = resolve));
 		}
@@ -326,7 +337,7 @@ test("while an upload runs, a closed dialog waits for it", async () => {
 		assert.equal(settled, false);
 
 		// The library's document arrives after the dialog has gone: it goes to the cursor.
-		uploader.options.on_success(doc("library"));
+		uploader.succeed(doc("library"));
 		assert.equal(inserted[0]?.file_url, "/files/library.png");
 
 		finish();
@@ -340,7 +351,7 @@ test("while an upload runs, a closed dialog waits for it", async () => {
 
 test("a failed upload leaves the promise waiting, and closing still settles it", async () => {
 	class Failing extends FakeUploader {
-		constructor(options: FakeUploader["options"]) {
+		constructor(options?: FrappeFileUploaderOptions) {
 			super(options);
 			this.upload_files = () => Promise.reject(new Error("417"));
 		}
@@ -455,7 +466,7 @@ test("a retry does not insert a finished file twice", () => {
 
 class Counting extends FakeUploader {
 	static sent = 0;
-	constructor(options: FakeUploader["options"]) {
+	constructor(options?: FrappeFileUploaderOptions) {
 		super(options);
 		this.upload_files = () => {
 			Counting.sent += 1;
@@ -500,7 +511,7 @@ test("a library choice the browser can show goes through, whatever it is called"
 			assert.equal(uploader.buttonDisabled, true);
 			// oxlint-disable-next-line no-await-in-loop -- one dialog at a time, as a person would
 			await running;
-			uploader.options.on_success(doc("chosen", { file_url: url }));
+			uploader.succeed(doc("chosen", { file_url: url }));
 			assert.equal(inserted.at(-1)?.file_url, url);
 			uploader.hidden();
 			// oxlint-disable-next-line no-await-in-loop -- one dialog at a time, as a person would
@@ -609,27 +620,27 @@ test("a host that never answers counts as not showing, and the dialog recovers",
 
 test("a private image is inserted with a warning", () => {
 	editor().pick();
-	last().options.on_success(doc("secret", { is_private: 1, file_url: "/private/files/secret.png" }));
+	last().succeed(doc("secret", { is_private: 1, file_url: "/private/files/secret.png" }));
 	assert.equal(inserted.length, 1);
 	assert.match(alerts[0]?.message ?? "", /secret\.png is private/);
 });
 
 test("a public image brings no warning", () => {
 	editor().pick();
-	last().options.on_success(doc("open", { is_private: 0 }));
+	last().succeed(doc("open", { is_private: 0 }));
 	assert.equal(alerts.length, 0);
 });
 
 test("a response without a File document is an error", () => {
 	editor().pick();
-	last().options.on_success(null);
+	last().succeed(null);
 	assert.equal(inserted.length, 0);
 	assert.equal(alerts[0]?.indicator, "red");
 });
 
 test("file names in a message are escaped", () => {
 	editor().pick();
-	last().options.on_success(doc("x", { is_private: 1, file_name: "<img src=x>.png" }));
+	last().succeed(doc("x", { is_private: 1, file_name: "<img src=x>.png" }));
 	assert.match(alerts[0]?.message ?? "", /&lt;img/);
 	assert.doesNotMatch(alerts[0]?.message ?? "", /<img/);
 });
@@ -668,7 +679,7 @@ test("a device file picked in the dialog is inserted whatever its name says", ()
 test("a cancelled file's late answer inserts nothing", async () => {
 	let finish = () => {};
 	class Slow extends FakeUploader {
-		constructor(options: FakeUploader["options"]) {
+		constructor(options?: FrappeFileUploaderOptions) {
 			super(options);
 			this.upload_files = () => new Promise<void>((resolve) => (finish = resolve));
 		}
@@ -699,7 +710,7 @@ test("a cancelled file's late answer inserts nothing", async () => {
 test("an upload that fails after the dialog closed says so, naming what was lost", async () => {
 	let fail: (reason: Error) => void = () => {};
 	class Slow extends FakeUploader {
-		constructor(options: FakeUploader["options"]) {
+		constructor(options?: FrappeFileUploaderOptions) {
 			super(options);
 			this.upload_files = () => new Promise<void>((_resolve, reject) => (fail = reject));
 		}
