@@ -3,7 +3,7 @@
 
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
-import type { FrappeDoc, FrappeFileUploaderFile, FrappeFileUploaderOptions } from "frappe-types";
+import type { FrappeFileDoc, FrappeFileUploaderFile, FrappeFileUploaderOptions } from "frappe-types";
 import type { UploadedMedia } from "frappe-ui/editor";
 import {
 	IMAGE_CHECK_TIMEOUT,
@@ -13,9 +13,6 @@ import {
 	uploadTarget,
 	type ImageDialogOptions,
 } from "./upload.ts";
-
-/** The File document `upload_file` answers with. */
-type Doc = FrappeDoc & { file_url: string; file_name?: string; is_private?: 0 | 1 };
 
 /** Stands in for `frappe.ui.FileUploader`, with what `FileUploader.vue` does to its list. */
 class FakeUploader {
@@ -76,13 +73,13 @@ class FakeUploader {
 	}
 
 	/** Reports an uploaded document (or none) to the caller, as the dialog does. */
-	succeed(doc: Doc | null) {
+	succeed(doc: FrappeFileDoc | null) {
 		assert.ok(this.options.on_success);
 		this.options.on_success(doc);
 	}
 
 	/** A device file finished: the dialog sets `doc`, then reports it. */
-	uploaded(file: File, doc: Doc) {
+	uploaded(file: File, doc: FrappeFileDoc) {
 		const entry = this.entries.find((candidate) => candidate.cropper_file === file);
 		assert.ok(entry);
 		entry.doc = doc;
@@ -141,11 +138,18 @@ function editor(overrides: Partial<ImageDialogOptions> = {}) {
 }
 
 const png = (name = "a.png") => new File(["x"], name, { type: "image/png" });
-const doc = (name: string, extra: Partial<Doc> = {}): Doc => ({
+/** The File document `upload_file` answers with. */
+const doc = (name: string, extra: Partial<FrappeFileDoc> = {}): FrappeFileDoc => ({
 	doctype: "File",
 	name,
 	file_name: `${name}.png`,
 	file_url: `/files/${name}.png`,
+	is_private: 0,
+	is_home_folder: 0,
+	is_attachments_folder: 0,
+	is_folder: 0,
+	uploaded_to_dropbox: 0,
+	uploaded_to_google_drive: 0,
 	...extra,
 });
 const tick = () => new Promise((resolve) => setTimeout(resolve));

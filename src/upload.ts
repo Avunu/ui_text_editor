@@ -15,21 +15,22 @@
  * and a failed upload stays in its list with the server's message.
  */
 
-import type { Form, FrappeDoc, FrappeFileUploaderFile } from "frappe-types";
+import type {
+	Form,
+	FrappeFileDoc,
+	FrappeFileUploaderDataUrlFile,
+	FrappeFileUploaderFile,
+} from "frappe-types";
 import type { UploadedMedia, UploadFunction } from "frappe-ui/editor";
 
-/** The File document `upload_file` answers with: the fields of it read here. */
-interface FileDoc extends FrappeDoc {
-	file_url: string;
-	file_name?: string;
-	is_private?: 0 | 1;
-}
+/** An uploaded File document: it has a URL to insert. */
+type FileDoc = FrappeFileDoc & { file_url: string };
 
 /**
  * Whether `on_success` was handed an uploaded File document. Without `as_dataurl`
  * it gets the document, or null when the response held none (`FileUploader.vue`).
  */
-function isFileDoc(file: FrappeDoc | FrappeFileUploaderFile | null): file is FileDoc {
+function isFileDoc(file: FrappeFileDoc | FrappeFileUploaderDataUrlFile | null): file is FileDoc {
 	return !!file && "file_url" in file && typeof file.file_url === "string" && file.file_url !== "";
 }
 
@@ -161,7 +162,7 @@ function openDialog(owner: ImageDialogOptions): Session {
 	let checking = false;
 	let closed = false;
 
-	const onSuccess = (doc: FrappeDoc | FrappeFileUploaderFile | null) => {
+	const onSuccess = (doc: FrappeFileDoc | FrappeFileUploaderDataUrlFile | null) => {
 		if (!isFileDoc(doc)) {
 			frappe.show_alert({ message: __("Could not upload the file."), indicator: "red" });
 			return;
