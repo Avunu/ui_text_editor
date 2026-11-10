@@ -30,10 +30,10 @@
 		"vue-router": "^5.4.0"
 	},
 	"devDependencies": {
-		"@tiptap/core": "^3.32.2",
-		"@tiptap/extension-code-block": "^3.32.2",
-		"@tiptap/extension-list": "^3.32.2",
-		"@tiptap/extension-underline": "^3.32.2",
+		"@tiptap/core": "^3.33.0",
+		"@tiptap/extension-code-block": "^3.33.0",
+		"@tiptap/extension-list": "^3.33.0",
+		"@tiptap/extension-underline": "^3.33.0",
 		"@types/node": "^26.6.6",
 		"@vitejs/plugin-vue": "^6.0.10",
 		"frappe-types": "^16.7.1",
@@ -44,7 +44,7 @@
 		"tailwindcss": "^3.4.17",
 		"typescript": "^7.0.2",
 		"typescript5": "npm:typescript@^5.9.3",
-		"vite": "^8.3.5",
+		"vite": "^8.3.6",
 		"vue-tsc": "^3.3.14"
 	},
 	"resolutions": {
