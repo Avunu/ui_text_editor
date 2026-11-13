@@ -27,13 +27,13 @@
 		"@iconify-json/lucide": "^1",
 		"frappe-ui": "^1.1",
 		"vue": "^3",
-		"vue-router": "^5.4.0"
+		"vue-router": "^5.5.0"
 	},
 	"devDependencies": {
-		"@tiptap/core": "^3.33.0",
-		"@tiptap/extension-code-block": "^3.33.0",
-		"@tiptap/extension-list": "^3.33.0",
-		"@tiptap/extension-underline": "^3.33.0",
+		"@tiptap/core": "^3.33.1",
+		"@tiptap/extension-code-block": "^3.33.1",
+		"@tiptap/extension-list": "^3.33.1",
+		"@tiptap/extension-underline": "^3.33.1",
 		"@types/node": "^26.6.6",
 		"@vitejs/plugin-vue": "^6.0.10",
 		"frappe-types": "^16.7.1",
