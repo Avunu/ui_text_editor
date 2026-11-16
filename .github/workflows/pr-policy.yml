@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    uses: Avunu/frappe-nix/.github/workflows/app-pr-policy.yml@82fc1270769e140e2b1e0caab41717d8fe8c55e2 # v2.4.1
+    uses: Avunu/frappe-nix/.github/workflows/app-pr-policy.yml@01f14f4bd4f57ef4fdb88ee92128b88c9ff92e03 # v2.6.1
     with:
       app: ui_text_editor
       integration-branch: develop
