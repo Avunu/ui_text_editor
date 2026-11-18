@@ -865,7 +865,7 @@ wheels = [
 [[package]]
 name = "frappe-runtime"
 version = "0.1.0"
-source = { git = "https://github.com/Avunu/frappe-nix?subdirectory=runtime#35fee36b0fe581c8a9e57f1fca212a97949f23e5" }
+source = { git = "https://github.com/Avunu/frappe-nix?subdirectory=runtime#46cd132bd75e4dd67c6c2cbf6cdfaa235c5b3bd7" }
 dependencies = [
     { name = "a2wsgi" },
     { name = "httpx" },
