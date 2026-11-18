@@ -500,11 +500,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1793540411,
-        "narHash": "sha256-fiPJ88izTVucjeo2EQ3jk4aWmLg03I1D4vxnX2QjEgE=",
+        "lastModified": 1794890597,
+        "narHash": "sha256-lME2lHoDHAaSHP3/okgiVoJ0icVEvsQH8LeU3We7tcc=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "0bb2eedc20e4739f29e8045034f2828ad7054f8f",
+        "rev": "04906337b6d53e8bb0eaf0470ae9f070a4d4eb55",
         "type": "github"
       },
       "original": {
@@ -658,11 +658,11 @@
     "standards-profile": {
       "flake": false,
       "locked": {
-        "lastModified": 1793842140,
-        "narHash": "sha256-aHilvsj3cZvqHZ5fQwFUiJvC/R5x+1TfJ9WLaMHf1Qw=",
+        "lastModified": 1794997119,
+        "narHash": "sha256-vTKoRJWekzJFnZFBNVF3Zf+Z7NKMtVNTiNTxQ6iK1ew=",
         "owner": "Avunu",
         "repo": "frappe-standards-profile",
-        "rev": "dd1a9f01ad3f9430dbbbb8ed88799f81da3e9675",
+        "rev": "65d18d2590d6efb4163a37bff0de30523bcd90fe",
         "type": "github"
       },
       "original": {
