@@ -162,11 +162,11 @@
     "frappe": {
       "flake": false,
       "locked": {
-        "lastModified": 1793791772,
-        "narHash": "sha256-+na0MaHFDSvK5mQE/OXcAWrOpaHp28yQH7DuS75P1UI=",
+        "lastModified": 1795010320,
+        "narHash": "sha256-8NEMJnKp9KdNjnO52PJ/jNzJHDGjla8VhaP3Kj05puk=",
         "owner": "frappe",
         "repo": "frappe",
-        "rev": "3d1284c5fdb52207a516a49bbf2fd186cb43b3ab",
+        "rev": "2df0425571ebbaed878eabc3edc5b7e7c3327ae0",
         "type": "github"
       },
       "original": {
