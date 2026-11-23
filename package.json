@@ -30,10 +30,10 @@
 		"vue-router": "^5.5.1"
 	},
 	"devDependencies": {
-		"@tiptap/core": "^3.34.0",
-		"@tiptap/extension-code-block": "^3.34.0",
-		"@tiptap/extension-list": "^3.34.0",
-		"@tiptap/extension-underline": "^3.34.0",
+		"@tiptap/core": "^3.35.0",
+		"@tiptap/extension-code-block": "^3.35.0",
+		"@tiptap/extension-list": "^3.35.0",
+		"@tiptap/extension-underline": "^3.35.0",
 		"@types/node": "^26.6.6",
 		"@vitejs/plugin-vue": "^6.0.11",
 		"frappe-types": "^16.7.1",
