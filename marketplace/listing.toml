@@ -6,5 +6,5 @@ type = "extension"
 category = "Extensions"
 categories = ["Productivity"]
 website = "https://avunu.net/open-source/ui_text_editor/"
-documentation = "https://github.com/Avunu/ui_text_editor#readme"
+documentation = "https://docs.avunu.net/ui-text-editor/"
 apps_screen = false
