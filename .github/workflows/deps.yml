@@ -21,7 +21,7 @@ jobs:
       pull-requests: write
       actions: write
       checks: read
-    uses: Avunu/frappe-nix/.github/workflows/app-deps.yml@d070093efbe7153c90e6e3cbba5d6c6028d0e005 # v2.9.2
+    uses: Avunu/frappe-nix/.github/workflows/app-deps.yml@36694404ea8306c0966aeddc7bb838d420ef8008 # v2.10.0
     with:
       app: ui_text_editor
       integration-branch: develop
