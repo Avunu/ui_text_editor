@@ -211,9 +211,9 @@
     "@floating-ui/utils" "^0.2.12"
 
 "@iconify-json/lucide@^1":
-  version "1.2.158"
-  resolved "https://registry.yarnpkg.com/@iconify-json/lucide/-/lucide-1.2.158.tgz#bd10c080b462a7f92321234af60ef77d7b8504ec"
-  integrity sha512-odd13G5/Jv4W+yomId3BjCQ/a1k7QemC0mi+CBvvpl18JBO+sQajKl4F3WtPvFHMnkOQ4d3/BFKShTmBlbG0dg==
+  version "1.2.159"
+  resolved "https://registry.yarnpkg.com/@iconify-json/lucide/-/lucide-1.2.159.tgz#656d01c90ff23b7c3c929f22b4156c6c68bad1fe"
+  integrity sha512-rE8dHb2LRSR2Vl6L6LspAJ83uPNKOIbEE8BLLo/ObQT8xHIEE3zmwIpO9LcZPjTsEnICSxWPFJcJ0Q38nxuZPw==
   dependencies:
     "@iconify/types" "*"
 
