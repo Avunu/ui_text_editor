@@ -1,5 +1,12 @@
 # Changelog
 
+## [16.1.1](https://github.com/Avunu/ui_text_editor/compare/v16.1.0...v16.1.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* **deps:** resolve Dependabot alerts that the locks can move ([#177](https://github.com/Avunu/ui_text_editor/issues/177)) ([075339d](https://github.com/Avunu/ui_text_editor/commit/075339df0380aa014b390a9a8503640bef71a765))
+
 ## [16.1.0](https://github.com/Avunu/ui_text_editor/compare/v16.0.0...v16.1.0) (2026-11-07)
 
 
